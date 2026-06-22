@@ -1262,11 +1262,13 @@ class Verk extends Process implements Module, ConfigurableModule {
         $rule  = $this->normalizeAuditRule($rule);
         $field = $rule['field'];
         $root  = strtok($field, '.');
-        if ($field === '' || (!$this->wire('fields')->get($root) && !in_array($root, ['id', 'name', 'title', 'url'], true))) {
+        // Field path is optional. When set, the rule reports pages in scope
+        // whose field-path value is empty (a "missing content" audit). When left
+        // blank, the rule is a pure scope-selector audit that reports every page
+        // the selector matches.
+        if ($field !== '' && !$this->wire('fields')->get($root) && !in_array($root, ['id', 'name', 'title', 'url'], true)) {
             return [
-                'setup' => $field === ''
-                    ? $this->_('Choose a field path for this audit rule.')
-                    : sprintf($this->_('Field path "%s" is not available on this site. Enter a field or dot-notation subfield that exists.'), $field),
+                'setup' => sprintf($this->_('Field path "%s" is not available on this site. Enter a field or dot-notation subfield that exists.'), $field),
                 'pages' => [],
                 'total' => 0,
             ];
@@ -1280,8 +1282,10 @@ class Verk extends Process implements Module, ConfigurableModule {
 
         $out = [];
         foreach ($pages as $p) {
-            if (!$this->pageHasAuditField($p, $root)) continue;
-            if (!$this->auditValueIsEmpty($this->auditDotValue($p, $field))) continue;
+            if ($field !== '') {
+                if (!$this->pageHasAuditField($p, $root)) continue;
+                if (!$this->auditValueIsEmpty($this->auditDotValue($p, $field))) continue;
+            }
             $out[] = [
                 'id'       => $p->id,
                 'title'    => $this->pageTitleForDisplay($p),
