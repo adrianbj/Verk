@@ -5125,6 +5125,14 @@ a.vk-sprint-summary-card.is-active {
     margin-bottom: 10px;
 }
 
+/* The decorative-icon sizing above must not bleed onto button icons
+   inside the empty-state actions; keep those matching normal buttons. */
+.vk-empty-actions .uk-button .fa {
+    color: inherit;
+    font-size: inherit;
+    margin-bottom: 0;
+}
+
 .vk-empty-icon {
     color: var(--vk-muted);
     display: block;
