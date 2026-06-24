@@ -196,8 +196,37 @@ ob_start();
                             <div>
                                 <div class="vk-field">
                                     <label class="uk-form-label"><?= __('Section / Tag') ?> <span class="vk-inline-note"><?= __('(e.g. "Products", "SEO", "Blog")') ?></span></label>
-                                    <input type="text" name="section" value="<?= htmlspecialchars($t['section'] ?? '') ?>" placeholder="<?= __('Optional label') ?>" class="uk-input">
+                                    <select name="section" id="vk-section-select" class="uk-select">
+                                        <option value="">&mdash; <?= __('None') ?> &mdash;</option>
+                                        <?php foreach (($sections ?? []) as $s): ?>
+                                        <option value="<?= htmlspecialchars($s) ?>" <?= ($t['section'] ?? '') === $s ? 'selected' : '' ?>><?= htmlspecialchars($s) ?></option>
+                                        <?php endforeach; ?>
+                                        <option value="__new__"><?= __('+ New section…') ?></option>
+                                    </select>
                                 </div>
+                                <div class="vk-field vk-hidden-row" id="vk-new-section-row">
+                                    <label class="uk-form-label"><?= __('New Section / Tag') ?></label>
+                                    <input type="text" name="new_section" id="vk-new-section" maxlength="100" placeholder="<?= __('e.g. Products') ?>" class="uk-input">
+                                </div>
+                                <script>
+                                (function () {
+                                    var sel = document.getElementById('vk-section-select');
+                                    if (!sel) return;
+                                    var row = document.getElementById('vk-new-section-row');
+                                    var inp = document.getElementById('vk-new-section');
+                                    sel.addEventListener('change', function () {
+                                        if (sel.value === '__new__') {
+                                            row.classList.remove('vk-hidden-row');
+                                            inp.required = true;
+                                            inp.focus();
+                                        } else {
+                                            row.classList.add('vk-hidden-row');
+                                            inp.required = false;
+                                            inp.value = '';
+                                        }
+                                    });
+                                })();
+                                </script>
                             </div>
                             <div>
                                 <div class="vk-field">

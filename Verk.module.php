@@ -629,6 +629,9 @@ class Verk extends Process implements Module, ConfigurableModule {
         }
 
         $users = $this->getAllUsers(!empty($task['assignee_id']) ? [(int)$task['assignee_id']] : []);
+        $sections = $this->wire('database')
+            ->query("SELECT DISTINCT section FROM vk_tasks WHERE section != '' ORDER BY section")
+            ->fetchAll(\PDO::FETCH_COLUMN);
         ob_start(); require __DIR__ . '/views/task-form.php'; return ob_get_clean();
     }
 
@@ -872,7 +875,7 @@ class Verk extends Process implements Module, ConfigurableModule {
             ':due_date'     => $dueDate,
             ':page_id'      => $pageId,
             ':assignee_id'  => $assigneeId,
-            ':section'      => substr($this->san($input->post('section')), 0, 100),
+            ':section'      => $this->sectionValue($input->post('section'), $input->post('new_section')),
             ':sprint_id'    => $sprintId,
             ':estimate_h'   => $estimate,
             ':actual_h'     => $actualH,
@@ -2444,6 +2447,13 @@ class Verk extends Process implements Module, ConfigurableModule {
         return $category === '__new__'
             ? substr($this->san($newCategory), 0, 100)
             : substr($this->san($category), 0, 100);
+    }
+
+    protected function sectionValue(mixed $section, mixed $newSection): string {
+        $section = (string) $section;
+        return $section === '__new__'
+            ? substr($this->san($newSection), 0, 100)
+            : substr($this->san($section), 0, 100);
     }
 
     public function textStats(string $html): array {
