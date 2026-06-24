@@ -2383,7 +2383,11 @@ class Verk extends Process implements Module, ConfigurableModule {
         $q = $this->wire('sanitizer')->text($this->wire('input')->get('q'));
         if (strlen($q) < 2) { echo json_encode([]); exit; }
 
-        $pages = $this->wire('pages')->find("title%=$q, template!=admin, limit=15, sort=title");
+        // include=unpublished covers both hidden and unpublished pages (but not
+        // trash); selectorValue() safely escapes the user-supplied query.
+        $selector = 'title%=' . $this->wire('sanitizer')->selectorValue($q)
+            . ', template!=admin, include=unpublished, limit=15, sort=title';
+        $pages = $this->wire('pages')->find($selector);
         $out   = [];
         foreach ($pages as $p) {
             $out[] = ['id' => $p->id, 'title' => $p->title, 'url' => $p->url, 'template' => (string)$p->template];
