@@ -1048,6 +1048,9 @@ class Verk extends Process implements Module, ConfigurableModule {
             'page_widget_show_quarter' => $has('page_widget_show_quarter') ? (int)(bool)$input->post('page_widget_show_quarter') : (int)$current['page_widget_show_quarter'],
             'page_widget_show_assignee' => $has('page_widget_show_assignee') ? (int)(bool)$input->post('page_widget_show_assignee') : (int)$current['page_widget_show_assignee'],
             'assignee_roles' => $has('assignee_roles') ? $this->sanRoleList((string)$input->post('assignee_roles')) : (string)($current['assignee_roles'] ?? ''),
+            // saveConfig() with an array replaces the whole config blob, so carry
+            // over keys this form doesn't manage (otherwise they're wiped).
+            'audit_rules' => (string)($current['audit_rules'] ?? ''),
         ]);
         $this->message($this->_('Settings saved.'));
         $this->redirect('settings');
@@ -1078,7 +1081,12 @@ class Verk extends Process implements Module, ConfigurableModule {
                 ]);
             }
         }
-        $this->wire('modules')->saveConfig($this, ['audit_rules' => json_encode($rules)]);
+        // saveConfig() with an array replaces the whole config blob, so retrieve
+        // the current config and update only audit_rules (otherwise every other
+        // setting is wiped).
+        $cfg = $this->wire('modules')->getConfig($this);
+        $cfg['audit_rules'] = json_encode($rules);
+        $this->wire('modules')->saveConfig($this, $cfg);
         $this->message($this->_('Audit rules saved.'));
         $this->redirect('audit');
     }
