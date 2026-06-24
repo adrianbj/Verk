@@ -89,7 +89,7 @@ ob_start();
             <div><dt><?= __('Due date') ?></dt><dd><?= htmlspecialchars($t['due_date'] ?: __('Not set')) ?></dd></div>
             <div><dt><?= __('Quarter') ?></dt><dd><?= htmlspecialchars($dueQuarterLabel ?: __('Not set')) ?></dd></div>
             <div><dt><?= __('Sprint') ?></dt><dd><?= htmlspecialchars($sprintName) ?></dd></div>
-            <div><dt><?= __('Estimate') ?></dt><dd><?= !empty($t['estimate_h']) ? htmlspecialchars((string)$t['estimate_h']) . 'h' : __('Not set') ?></dd></div>
+            <div><dt><?= __('Estimate') ?></dt><dd><?php $estD = $this->formatEstimate($t['estimate_h'] ?? ''); ?><?= $estD !== '' ? htmlspecialchars($estD) : __('Not set') ?></dd></div>
             <div><dt><?= __('Story points') ?></dt><dd><?= !empty($t['story_points']) ? (int)$t['story_points'] : '&mdash;' ?></dd></div>
             <div><dt><?= __('Linked page') ?></dt><dd><?= $linkedPage ? htmlspecialchars($linkedPageTitle) : __('None') ?></dd></div>
         </dl>
@@ -253,6 +253,8 @@ ob_start();
                                     <label class="uk-form-label"><?= __('Estimate') ?> <span class="vk-inline-note"><?= __('(hours)') ?></span></label>
                                     <select name="estimate_h" class="uk-select">
                                         <option value="">&mdash;</option>
+                                        <option value="0.25" <?= ($t['estimate_h'] ?? '') == 0.25 ? 'selected' : '' ?>><?= __('15m') ?></option>
+                                        <option value="0.5" <?= ($t['estimate_h'] ?? '') == 0.5 ? 'selected' : '' ?>><?= __('30m') ?></option>
                                         <?php foreach ([1, 2, 4, 6, 8, 12, 16, 24, 32, 40] as $h): ?>
                                         <option value="<?= $h ?>" <?= ($t['estimate_h'] ?? '') == $h ? 'selected' : '' ?>><?= $h ?>h<?= $h === 4 ? ' ' . __('(default)') : '' ?></option>
                                         <?php endforeach; ?>
@@ -359,7 +361,7 @@ ob_start();
                 </div>
                 <div class="vk-time-total">
                     <span><?= number_format($totalLogged, 1) ?>h</span>
-                    <small><?= $t['estimate_h'] ? sprintf(__('of %sh'), htmlspecialchars((string)$t['estimate_h'])) : __('logged') ?></small>
+                    <small><?php $estD = $this->formatEstimate($t['estimate_h'] ?? ''); ?><?= $estD !== '' ? sprintf(__('of %s'), htmlspecialchars($estD)) : __('logged') ?></small>
                 </div>
             </div>
             <div class="uk-card-body">

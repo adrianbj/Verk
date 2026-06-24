@@ -385,7 +385,7 @@ ob_start();
                 <span class="uk-label vk-label vk-label-<?= $t['priority'] ?>"><?= htmlspecialchars($this->priorityLabel($t['priority'])) ?></span>
                 <span class="uk-label vk-label vk-label-<?= $t['status'] ?>"><?= htmlspecialchars($this->statusLabel($t['status'])) ?></span>
                 <?php if ($t['story_points']): ?><span class="vk-sprint-pill"><?= (int)$t['story_points'] ?> <?= __('SP') ?></span><?php endif; ?>
-                <?php if($t['estimate_h']): ?><span class="vk-sprint-pill"><?= htmlspecialchars((string)$t['estimate_h']) ?>h</span><?php endif; ?>
+                <?php $estD = $this->formatEstimate($t['estimate_h']); if($estD !== ''): ?><span class="vk-sprint-pill"><?= htmlspecialchars($estD) ?></span><?php endif; ?>
                 <?php if($t['actual_h'] !== null && $t['actual_h'] !== ''): ?><span class="vk-sprint-pill <?= ($t['estimate_h'] && $t['actual_h'] > $t['estimate_h']) ? 'is-over' : '' ?>"><?= number_format((float)$t['actual_h'],1) ?>h</span><?php endif; ?>
                 <?php if (!empty($t['linked_page_edit'])): ?><a href="<?= $t['linked_page_edit'] ?>" class="vk-icon-button" target="_blank" title="<?= __('Edit linked page') ?>" aria-label="<?= __('Edit linked page') ?>"><i class="fa fa-pencil-square-o"></i></a><?php endif; ?>
                 <?php if (!empty($t['linked_page_url']) && !empty($t['linked_page_viewable'])): ?><a href="<?= $t['linked_page_url'] ?>" class="vk-icon-button" target="_blank" title="<?= __('Open page') ?>" aria-label="<?= __('Open page') ?>"><i class="fa fa-external-link"></i></a><?php endif; ?>

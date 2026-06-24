@@ -306,7 +306,7 @@ ob_start();
                         <div class="vk-sprint-issue-side">
                             <span class="uk-label vk-label-<?= $t['status'] ?>"><?= htmlspecialchars($this->statusLabel($t['status'])) ?></span>
                             <?php if ($t['story_points']): ?><span class="vk-sprint-pill"><?= (int)$t['story_points'] ?> <?= __('SP') ?></span><?php endif; ?>
-                            <?php if ($t['estimate_h']): ?><span class="vk-sprint-pill"><?= htmlspecialchars((string)$t['estimate_h']) ?>h</span><?php endif; ?>
+                            <?php $estD = $this->formatEstimate($t['estimate_h']); if ($estD !== ''): ?><span class="vk-sprint-pill"><?= htmlspecialchars($estD) ?></span><?php endif; ?>
                             <?php if ($t['actual_h'] !== null && $t['actual_h'] !== ''): ?><span class="vk-sprint-pill <?= ($t['estimate_h'] && $t['actual_h'] > $t['estimate_h']) ? 'is-over' : '' ?>"><?= number_format((float)$t['actual_h'], 1) ?>h</span><?php endif; ?>
                             <button type="button" class="vk-sprint-remove-task" data-task-id="<?= (int)$t['id'] ?>" title="<?= __('Remove from sprint') ?>" aria-label="<?= __('Remove from sprint') ?>"><i class="fa fa-times"></i></button>
                         </div>
@@ -631,7 +631,8 @@ ob_start();
 
     function formatHours(value) {
         const n = Number(value || 0);
-        return Number.isInteger(n) ? n + 'h' : n.toFixed(1) + 'h';
+        if (n > 0 && n < 1) return Math.round(n * 60) + 'm';
+        return Number.isInteger(n) ? n + 'h' : (Math.round(n * 100) / 100) + 'h';
     }
 
     function updateStats(summary) {

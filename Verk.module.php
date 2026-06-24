@@ -859,7 +859,7 @@ class Verk extends Process implements Module, ConfigurableModule {
             $this->wire('session')->redirect($editUrl);
         }
 
-        $estimate = $this->sanAllowedInt($input->post('estimate_h'), [2, 4, 8]);
+        $estimate = $this->sanAllowedNum($input->post('estimate_h'), [0.25, 0.5, 1, 2, 4, 6, 8, 12, 16, 24, 32, 40]);
         $sp       = $this->sanAllowedInt($input->post('story_points'), [1, 2, 3, 5, 8, 13, 21]);
 
         // actual_h: if task already has time logs, recalculate from DB to prevent POST tampering
@@ -2580,6 +2580,24 @@ class Verk extends Process implements Module, ConfigurableModule {
         if ($raw === '') return null;
         $n = (int)$raw;
         return in_array($n, $allowed, true) ? $n : null;
+    }
+
+    protected function sanAllowedNum(mixed $v, array $allowed): ?float {
+        $raw = trim((string)$v);
+        if ($raw === '') return null;
+        $n = (float)$raw;
+        foreach ($allowed as $a) {
+            if (abs($n - (float)$a) < 0.001) return $n;
+        }
+        return null;
+    }
+
+    /** Format an hours value for display: <1h as minutes (15m), else trimmed hours (4h, 1.5h). */
+    public function formatEstimate($h): string {
+        $h = (float)$h;
+        if ($h <= 0) return '';
+        if ($h < 1) return rtrim(rtrim(number_format($h * 60, 2, '.', ''), '0'), '.') . 'm';
+        return rtrim(rtrim(number_format($h, 2, '.', ''), '0'), '.') . 'h';
     }
 
     protected function sanNonNegativeDecimal(mixed $v): ?float {
