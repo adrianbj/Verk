@@ -62,6 +62,10 @@ class Verk extends Process implements Module, ConfigurableModule {
             'page_widget_show_quarter' => 1,
             'page_widget_show_assignee' => 1,
             'assignee_roles' => '',
+            'notify_enabled' => 1,
+            'notify_assignee' => 1,
+            'notify_collaborator' => 1,
+            'notify_reviewer' => 1,
         ];
     }
 
@@ -1171,6 +1175,10 @@ class Verk extends Process implements Module, ConfigurableModule {
             'page_widget_show_quarter' => $has('page_widget_show_quarter') ? (int)(bool)$input->post('page_widget_show_quarter') : (int)$current['page_widget_show_quarter'],
             'page_widget_show_assignee' => $has('page_widget_show_assignee') ? (int)(bool)$input->post('page_widget_show_assignee') : (int)$current['page_widget_show_assignee'],
             'assignee_roles' => $has('assignee_roles') ? $this->sanRoleList((string)$input->post('assignee_roles')) : (string)($current['assignee_roles'] ?? ''),
+            'notify_enabled' => $has('notify_enabled') ? (int)(bool)$input->post('notify_enabled') : (int)$current['notify_enabled'],
+            'notify_assignee' => $has('notify_assignee') ? (int)(bool)$input->post('notify_assignee') : (int)$current['notify_assignee'],
+            'notify_collaborator' => $has('notify_collaborator') ? (int)(bool)$input->post('notify_collaborator') : (int)$current['notify_collaborator'],
+            'notify_reviewer' => $has('notify_reviewer') ? (int)(bool)$input->post('notify_reviewer') : (int)$current['notify_reviewer'],
             // saveConfig() with an array replaces the whole config blob, so carry
             // over keys this form doesn't manage (otherwise they're wiped).
             'audit_rules' => (string)($current['audit_rules'] ?? ''),

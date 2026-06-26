@@ -271,6 +271,24 @@ ob_start();
                         <button type="submit" class="uk-button uk-button-primary"><?= __('Save Widget') ?></button>
                     </div>
                 </form>
+
+                <form method="post" action="<?= $url ?>" class="vk-widget-settings-form" id="vk-notify-settings-form" style="margin-top:24px">
+                    <input type="hidden" name="<?= $csrfN ?>" value="<?= $csrf ?>">
+                    <input type="hidden" name="action" value="save_settings">
+
+                    <div class="vk-settings-subtitle"><?= __('Email notifications') ?></div>
+                    <p class="vk-settings-intro"><?= __('Email users when they are added to a task as assignee, collaborator, or reviewer.') ?></p>
+                    <div class="vk-settings-options">
+                        <label><input type="hidden" name="notify_enabled" value="0"><input type="checkbox" name="notify_enabled" value="1"<?= $checked($cfg['notify_enabled']) ?>><span><strong><?= __('Enable notifications') ?></strong><small><?= __('Master switch for all task membership emails') ?></small></span></label>
+                        <label><input type="hidden" name="notify_assignee" value="0"><input type="checkbox" name="notify_assignee" value="1"<?= $checked($cfg['notify_assignee']) ?>><span><strong><?= __('Assignee') ?></strong><small><?= __('Email when set as a task assignee') ?></small></span></label>
+                        <label><input type="hidden" name="notify_collaborator" value="0"><input type="checkbox" name="notify_collaborator" value="1"<?= $checked($cfg['notify_collaborator']) ?>><span><strong><?= __('Collaborator') ?></strong><small><?= __('Email when added as a collaborator') ?></small></span></label>
+                        <label><input type="hidden" name="notify_reviewer" value="0"><input type="checkbox" name="notify_reviewer" value="1"<?= $checked($cfg['notify_reviewer']) ?>><span><strong><?= __('Reviewer') ?></strong><small><?= __('Email when added as a reviewer') ?></small></span></label>
+                    </div>
+
+                    <div class="vk-form-actions">
+                        <button type="submit" class="uk-button uk-button-primary"><?= __('Save Notifications') ?></button>
+                    </div>
+                </form>
                     </div>
 
                 <div class="vk-widget-preview" id="vk-widget-preview"
