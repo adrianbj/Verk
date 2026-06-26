@@ -64,7 +64,26 @@ class VerkNotify {
 
     /** Send a single digest email to an assignee given N freshly bulk-created tasks. */
     public function bulkAssigned(int $assigneeId, int $count, int $actorId): void {
-        // implemented in Task 4
+        if ($count < 1) return;
+        if ($assigneeId === $actorId) return;        // actor assigned themselves
+        if (!$this->cfgOn('notify_assignee')) return; // gated by master + assignee toggle
+
+        $to = $this->recipient($assigneeId);
+        if (!$to) return;
+
+        $listUrl = $this->deskUrl() . '?view=tasks&assignee_id=' . $assigneeId;
+        $actor = $this->actorName($actorId);
+
+        $subject = sprintf('[Verk] You\'ve been assigned %d new task%s', $count, $count === 1 ? '' : 's');
+        $body = sprintf(
+            "Hi %s,\n\n%s assigned you %d new Verk task%s.\n\nView your tasks:\n%s\n",
+            $to['name'] ?: 'there',
+            $actor,
+            $count,
+            $count === 1 ? '' : 's',
+            $listUrl
+        );
+        $this->sendPlain($to['email'], $subject, $body);
     }
 
     // ---- private helpers -------------------------------------------------

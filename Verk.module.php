@@ -2520,6 +2520,11 @@ class Verk extends Process implements Module, ConfigurableModule {
             $created++;
         }
 
+        // One digest email to the bulk assignee (skips actor, gated by config).
+        if ($assigneeId) {
+            $this->notify->bulkAssigned((int) $assigneeId, $created, (int) $user->id);
+        }
+
         $this->message(sprintf($this->_n('%d task created.', '%d tasks created.', $created), $created));
         if ($returnUrl) $this->wire('session')->redirect($returnUrl);
         $this->redirect('tasks');
