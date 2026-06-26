@@ -908,6 +908,20 @@ class Verk extends Process implements Module, ConfigurableModule {
         if ($returnUrl) $editUrl .= '&return_url=' . rawurlencode($returnUrl);
         $this->requireOwnerForExisting('vk_tasks', $id);
 
+        // Snapshot current membership before writes, to detect newly-added users.
+        $notifyBefore = ['assignee' => 0, 'reviewer' => [], 'collaborator' => []];
+        if ($id) {
+            $bStmt = $db->prepare("SELECT assignee_id FROM vk_tasks WHERE id = :id");
+            $bStmt->execute([':id' => $id]);
+            $notifyBefore['assignee'] = (int) $bStmt->fetchColumn();
+            $rPrev = $db->prepare("SELECT user_id FROM vk_task_reviewers WHERE task_id = :tid");
+            $rPrev->execute([':tid' => $id]);
+            $notifyBefore['reviewer'] = array_map('intval', $rPrev->fetchAll(\PDO::FETCH_COLUMN));
+            $cPrev = $db->prepare("SELECT user_id FROM vk_task_collaborators WHERE task_id = :tid");
+            $cPrev->execute([':tid' => $id]);
+            $notifyBefore['collaborator'] = array_map('intval', $cPrev->fetchAll(\PDO::FETCH_COLUMN));
+        }
+
         $title = substr($this->san($input->post('title')), 0, 255);
         if (!$title) {
             $this->error($this->_('Title is required.'));
@@ -1005,6 +1019,14 @@ class Verk extends Process implements Module, ConfigurableModule {
             $insC = $db->prepare("INSERT INTO vk_task_collaborators (task_id, user_id) VALUES (:tid, :uid)");
             foreach ($collaboratorIds as $cid) $insC->execute([':tid' => $id, ':uid' => $cid]);
         }
+
+        // Notify users newly added to a role on this task.
+        $notifyAfter = [
+            'assignee'     => (int) ($assigneeId ?? 0),
+            'reviewer'     => array_values($reviewerIds),
+            'collaborator' => array_values($collaboratorIds),
+        ];
+        $this->notify->membershipChanged($id, $title, $notifyBefore, $notifyAfter, (int) $user->id);
 
         if ($returnUrl) $this->wire('session')->redirect($returnUrl);
         $this->redirect('task-edit', $id);

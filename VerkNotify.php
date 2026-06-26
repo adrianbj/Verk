@@ -10,7 +10,56 @@ class VerkNotify {
      * $before/$after shape: ['assignee'=>int, 'reviewer'=>[int], 'collaborator'=>[int]]
      */
     public function membershipChanged(int $taskId, string $title, array $before, array $after, int $actorId): void {
-        // implemented in Task 3
+        $roles = [
+            'assignee'     => ['cfg' => 'notify_assignee',     'label' => 'Assignee'],
+            'collaborator' => ['cfg' => 'notify_collaborator', 'label' => 'Collaborator'],
+            'reviewer'     => ['cfg' => 'notify_reviewer',     'label' => 'Reviewer'],
+        ];
+
+        // userId => [role labels they were newly given on this save]
+        $newRolesByUser = [];
+
+        foreach ($roles as $role => $meta) {
+            if (!$this->cfgOn($meta['cfg'])) continue;
+
+            if ($role === 'assignee') {
+                $newId = (int) ($after['assignee'] ?? 0);
+                $oldId = (int) ($before['assignee'] ?? 0);
+                $added = ($newId > 0 && $newId !== $oldId) ? [$newId] : [];
+            } else {
+                $afterIds  = array_map('intval', (array) ($after[$role] ?? []));
+                $beforeIds = array_map('intval', (array) ($before[$role] ?? []));
+                $added = array_values(array_diff($afterIds, $beforeIds));
+            }
+
+            foreach ($added as $uid) {
+                if ($uid === $actorId) continue; // never notify the actor about their own change
+                $newRolesByUser[$uid][] = $meta['label'];
+            }
+        }
+
+        if (!$newRolesByUser) return;
+
+        $base = $this->deskUrl();
+        $taskUrl = $base . '?view=task-edit&id=' . $taskId;
+        $actor = $this->actorName($actorId);
+
+        foreach ($newRolesByUser as $uid => $labels) {
+            $to = $this->recipient((int) $uid);
+            if (!$to) continue;
+
+            $rolesText = implode(', ', $labels);
+            $subject = sprintf('[Verk] You\'ve been added to a task: "%s"', $title);
+            $body = sprintf(
+                "Hi %s,\n\n%s added you to a Verk task as: %s\n\nTask: %s\n\nOpen the task:\n%s\n",
+                $to['name'] ?: 'there',
+                $actor,
+                $rolesText,
+                $title,
+                $taskUrl
+            );
+            $this->sendPlain($to['email'], $subject, $body);
+        }
     }
 
     /** Send a single digest email to an assignee given N freshly bulk-created tasks. */
