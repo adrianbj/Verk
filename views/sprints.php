@@ -341,7 +341,7 @@ ob_start();
                 <a href="<?= $url ?>?view=task-edit&id=<?= (int)$previewTask['id'] ?>&return_url=<?= $currentSprintReturn ?>" class="vk-sprint-task-chip is-<?= htmlspecialchars((string)$previewTask['status']) ?>">
                     <span class="vk-sprint-task-key"><?= __('TASK') ?>-<?= (int)$previewTask['id'] ?></span>
                     <span class="vk-sprint-task-title"><?= htmlspecialchars((string)$previewTask['title']) ?></span>
-                    <?php if (!empty($previewTask['linked_page_title'])): ?><span class="vk-sprint-task-page"><i class="fa fa-file-o"></i> <?= htmlspecialchars((string)$previewTask['linked_page_title']) ?></span><?php endif; ?>
+                    <?php if (!empty($previewTask['linked_page_title'])): $dsp = $this->pageStatusDisplay($previewTask['linked_page_status'] ?? []); ?><span class="vk-sprint-task-page <?= $dsp['class'] ?>"<?= $dsp['label'] !== '' ? ' title="' . htmlspecialchars($dsp['label']) . '"' : '' ?>><i class="fa fa-file-o"></i> <?= $dsp['icon'] ?><?= htmlspecialchars((string)$previewTask['linked_page_title']) ?></span><?php endif; ?>
                     <?php if (!empty($previewTask['due_date'])): ?><span class="vk-sprint-task-date"><?= htmlspecialchars(date('M j', strtotime((string)$previewTask['due_date']))) ?></span><?php endif; ?>
                 </a>
                 <?php endforeach; ?>

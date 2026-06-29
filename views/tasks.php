@@ -468,7 +468,7 @@ ob_start();
                     <?php if ($t['section']): ?><span><?= htmlspecialchars($t['section']) ?></span><?php endif; ?>
                     <span class="<?= $t['assignee_name'] ? '' : 'is-muted' ?>"><i class="fa fa-user-o"></i> <?= $t['assignee_name'] ? htmlspecialchars($t['assignee_name']) : __('Unassigned') ?></span>
                     <?php if ($t['sprint_name']): ?><span><i class="fa fa-bolt"></i> <?= htmlspecialchars($t['sprint_name']) ?></span><?php endif; ?>
-                    <?php if (!empty($t['linked_page_title'])): ?><span><a href="<?= $t['linked_page_edit'] ?>" class="vk-inline-page-link" target="_blank"><i class="fa fa-pencil-square-o"></i> <?= htmlspecialchars(mb_strimwidth((string)$t['linked_page_title'], 0, 34, '...')) ?></a></span><?php endif; ?>
+                    <?php if (!empty($t['linked_page_title'])): $dlp = $this->pageStatusDisplay($t['linked_page_status'] ?? []); ?><span><a href="<?= $t['linked_page_edit'] ?>" class="vk-inline-page-link <?= $dlp['class'] ?>" target="_blank"<?= $dlp['label'] !== '' ? ' title="' . htmlspecialchars($dlp['label']) . '"' : '' ?>><i class="fa fa-pencil-square-o"></i> <?= $dlp['icon'] ?><?= htmlspecialchars(mb_strimwidth((string)$t['linked_page_title'], 0, 34, '...')) ?></a></span><?php endif; ?>
                     <span class="<?= ($t['due_date'] && $t['due_date'] < $today && $t['status'] !== 'done') ? 'is-overdue' : (!$t['due_date'] ? 'is-muted' : '') ?>"><i class="fa fa-calendar-o"></i> <?= $t['due_date'] ? htmlspecialchars($t['due_date']) : __('No due date') ?></span>
                     <?php if ($t['due_date']): ?><span class="vk-quarter-inline"><?= htmlspecialchars($this->quarterLabelForDate($t['due_date'])) ?></span><?php endif; ?>
                 </div>

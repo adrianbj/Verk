@@ -1238,6 +1238,7 @@ class Verk extends Process implements Module, ConfigurableModule {
         $task['linked_page_url']  = '';
         $task['linked_page_title'] = '';
         $task['linked_page_viewable'] = false;
+        $task['linked_page_status'] = [];
         if (!empty($task['page_id'])) {
             $p = $this->wire('pages')->get((int)$task['page_id']);
             if ($p->id) {
@@ -1246,6 +1247,7 @@ class Verk extends Process implements Module, ConfigurableModule {
                 $task['linked_page_viewable'] = $p->viewable();
                 $task['linked_page_url']  = $task['linked_page_viewable'] ? $p->httpUrl() : '';
                 $task['linked_page_title'] = $this->pageTitleForDisplay($p);
+                $task['linked_page_status'] = $this->pageStatusFlags($p);
             }
         }
         return $task;
@@ -1270,6 +1272,7 @@ class Verk extends Process implements Module, ConfigurableModule {
                 $t['linked_page_viewable'] = $p->viewable();
                 $t['linked_page_url']  = $t['linked_page_viewable'] ? $p->httpUrl() : '';
                 $t['linked_page_title'] = $this->pageTitleForDisplay($p);
+                $t['linked_page_status'] = $this->pageStatusFlags($p);
             }
         }
         return $tasks;
@@ -1291,12 +1294,43 @@ class Verk extends Process implements Module, ConfigurableModule {
         $task['linked_page_url'] = '';
         $task['linked_page_title'] = '';
         $task['linked_page_viewable'] = false;
+        $task['linked_page_status'] = [];
         return $task;
     }
 
     protected function pageTitleForDisplay(Page $page): string {
         $title = trim((string)$page->title);
         return $title !== '' ? $title : ('#' . (int)$page->id . ' ' . $page->name);
+    }
+
+    /** Publication-status flags for a page. */
+    protected function pageStatusFlags(Page $page): array {
+        return [
+            'hidden'      => $page->isHidden(),
+            'unpublished' => $page->isUnpublished(),
+            'trashed'     => $page->isTrash(),
+        ];
+    }
+
+    /**
+     * Presentation pieces derived from status flags, for consistent rendering
+     * across views: 'class' (space-joined modifier classes, '' if none),
+     * 'label' (human status, e.g. "Hidden, Unpublished", '' if none), and
+     * 'icon' (trash-icon HTML, '' unless trashed; safe/pre-escaped).
+     */
+    protected function pageStatusDisplay(array $flags): array {
+        $classes = [];
+        $label   = [];
+        if (!empty($flags['hidden']))      { $classes[] = 'vk-status-hidden';      $label[] = $this->_('Hidden'); }
+        if (!empty($flags['unpublished'])) { $classes[] = 'vk-status-unpublished'; $label[] = $this->_('Unpublished'); }
+        if (!empty($flags['trashed']))     { $classes[] = 'vk-status-trashed';     $label[] = $this->_('Trashed'); }
+        return [
+            'class' => implode(' ', $classes),
+            'label' => implode(', ', $label),
+            'icon'  => !empty($flags['trashed'])
+                ? '<i class="fa fa-trash vk-status-icon" aria-hidden="true"></i>'
+                : '',
+        ];
     }
 
     protected function getUpcomingPublications(int $days = 14): array {
@@ -1321,11 +1355,12 @@ class Verk extends Process implements Module, ConfigurableModule {
         $out = [];
         foreach ($pages as $p) {
             $out[] = [
-                'id'    => $p->id,
-                'title' => $p->title,
-                'date'  => (string)$p->get($cfg['calendar_date_field']),
-                'url'   => $p->httpUrl(),
-                'edit'  => $this->wire('config')->urls->admin . 'page/edit/?id=' . $p->id,
+                'id'     => $p->id,
+                'title'  => $p->title,
+                'date'   => (string)$p->get($cfg['calendar_date_field']),
+                'url'    => $p->httpUrl(),
+                'edit'   => $this->wire('config')->urls->admin . 'page/edit/?id=' . $p->id,
+                'status' => $this->pageStatusFlags($p),
             ];
         }
         return $out;
@@ -1354,11 +1389,12 @@ class Verk extends Process implements Module, ConfigurableModule {
             $d = (string)$p->get($cfg['calendar_date_field']);
             $dateKey = substr($d, 0, 10);
             $byDay[$dateKey][] = [
-                'id'    => $p->id,
-                'title' => $p->title,
-                'date'  => $d,
-                'edit'  => $this->wire('config')->urls->admin . 'page/edit/?id=' . $p->id,
-                'url'   => $p->httpUrl(),
+                'id'     => $p->id,
+                'title'  => $p->title,
+                'date'   => $d,
+                'edit'   => $this->wire('config')->urls->admin . 'page/edit/?id=' . $p->id,
+                'url'    => $p->httpUrl(),
+                'status' => $this->pageStatusFlags($p),
             ];
         }
         return $byDay;
@@ -1478,7 +1514,7 @@ class Verk extends Process implements Module, ConfigurableModule {
                 'template' => (string)$p->template,
                 'edit'     => $this->wire('config')->urls->admin . 'page/edit/?id=' . $p->id,
                 'url'      => $p->url,
-            ];
+            ] + $this->pageStatusFlags($p);
         }
         return ['pages' => $out, 'total' => count($out)];
     }
@@ -1891,7 +1927,7 @@ class Verk extends Process implements Module, ConfigurableModule {
         $pages = [];
         foreach ($pageIds as $pid) {
             $p = $this->wire('pages')->get($pid);
-            if ($p->id) $pages[] = ['id'=>$p->id, 'title'=>$p->title, 'url'=>$p->url];
+            if ($p->id) $pages[] = ['id'=>$p->id, 'title'=>$p->title, 'url'=>$p->url, 'status'=>$this->pageStatusFlags($p)];
         }
 
         if (!$pages) {
@@ -2604,7 +2640,7 @@ class Verk extends Process implements Module, ConfigurableModule {
         $pages = $this->wire('pages')->find($selector);
         $out   = [];
         foreach ($pages as $p) {
-            $out[] = ['id' => $p->id, 'title' => $p->title, 'url' => $p->url, 'template' => (string)$p->template];
+            $out[] = ['id' => $p->id, 'title' => $p->title, 'url' => $p->url, 'template' => (string)$p->template] + $this->pageStatusFlags($p);
         }
         echo json_encode($out);
         exit;

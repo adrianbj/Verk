@@ -20,6 +20,7 @@ $adminUrl = $this->wire('config')->urls->admin;
 $backUrl  = $url . '?view=task-edit&id=' . ($t['id'] ?? 0) . ($returnUrl ? '&return_url=' . rawurlencode($returnUrl) : '');
 $layoutClass = $isEdit ? 'vk-task-layout vk-task-workspace has-sidebar' : 'vk-task-layout vk-task-create';
 $linkedPageTitle = $linkedPage ? $this->pageTitleForDisplay($linkedPage) : '';
+$linkedPageStatus = $linkedPage ? $this->pageStatusDisplay($this->pageStatusFlags($linkedPage)) : ['class'=>'','label'=>'','icon'=>''];
 $assigneeName = __('Unassigned');
 foreach ($users as $taskUser) {
     if ((int)$taskUser['id'] === (int)($t['assignee_id'] ?? 0)) {
@@ -97,7 +98,7 @@ ob_start();
             <div><dt><?= __('Sprint') ?></dt><dd><?= htmlspecialchars($sprintName) ?></dd></div>
             <div><dt><?= __('Estimate') ?></dt><dd><?php $estD = $this->formatEstimate($t['estimate_h'] ?? ''); ?><?= $estD !== '' ? htmlspecialchars($estD) : __('Not set') ?></dd></div>
             <div><dt><?= __('Story points') ?></dt><dd><?= !empty($t['story_points']) ? (int)$t['story_points'] : '&mdash;' ?></dd></div>
-            <div><dt><?= __('Linked page') ?></dt><dd><?= $linkedPage ? htmlspecialchars($linkedPageTitle) : __('None') ?></dd></div>
+            <div><dt><?= __('Linked page') ?></dt><dd><?php if ($linkedPage): ?><span class="<?= $linkedPageStatus['class'] ?>"<?= $linkedPageStatus['label'] !== '' ? ' title="' . htmlspecialchars($linkedPageStatus['label']) . '"' : '' ?>><?= $linkedPageStatus['icon'] ?><?= htmlspecialchars($linkedPageTitle) ?></span><?php else: ?><?= __('None') ?><?php endif; ?></dd></div>
         </dl>
     </div>
 </section>
@@ -136,8 +137,8 @@ ob_start();
                             </div>
                             <?php if ($linkedPage): ?>
                             <div class="vk-inline-actions vk-linked-page-actions">
-                                <a href="<?= $adminUrl ?>page/edit/?id=<?= $linkedPage->id ?>" class="vk-chip" target="_blank">
-                                    <i class="fa fa-pencil-square-o"></i> <?= __('Edit:') ?> <?= htmlspecialchars($linkedPageTitle) ?>
+                                <a href="<?= $adminUrl ?>page/edit/?id=<?= $linkedPage->id ?>" class="vk-chip <?= $linkedPageStatus['class'] ?>" target="_blank"<?= $linkedPageStatus['label'] !== '' ? ' title="' . htmlspecialchars($linkedPageStatus['label']) . '"' : '' ?>>
+                                    <i class="fa fa-pencil-square-o"></i> <?= __('Edit:') ?> <?= $linkedPageStatus['icon'] ?><?= htmlspecialchars($linkedPageTitle) ?>
                                 </a>
                                 <?php if ($linkedPage->viewable()): ?>
                                 <a href="<?= $linkedPage->httpUrl() ?>" class="vk-chip" target="_blank">
@@ -514,7 +515,17 @@ ob_start();
                             const div = document.createElement('div');
                             div.className = 'vk-picker-result';
                             const strong = document.createElement('strong');
-                            strong.textContent = p.title;
+                            const statusBits = [];
+                            if (p.trashed) {
+                                const icon = document.createElement('i');
+                                icon.className = 'fa fa-trash vk-status-icon';
+                                strong.appendChild(icon);
+                                statusBits.push('<?= __('Trashed') ?>');
+                            }
+                            strong.appendChild(document.createTextNode(p.title));
+                            if (p.hidden)      { strong.classList.add('vk-status-hidden');      statusBits.push('<?= __('Hidden') ?>'); }
+                            if (p.unpublished) { strong.classList.add('vk-status-unpublished'); statusBits.push('<?= __('Unpublished') ?>'); }
+                            if (statusBits.length) div.title = statusBits.join(', ');
                             const small = document.createElement('small');
                             small.textContent = ' ' + p.url + ' · ' + p.template;
                             div.appendChild(strong);

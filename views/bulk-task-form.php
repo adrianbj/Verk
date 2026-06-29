@@ -161,7 +161,8 @@ ob_start();
             <div class="vk-scroll-list">
                 <?php foreach ($pages as $p): ?>
                 <div class="vk-page-pick-row">
-                    <span class="vk-page-pick-title"><?= htmlspecialchars($p['title']) ?></span>
+                    <?php $d = $this->pageStatusDisplay($p['status'] ?? []); ?>
+                    <span class="vk-page-pick-title <?= $d['class'] ?>"<?= $d['label'] !== '' ? ' title="' . htmlspecialchars($d['label']) . '"' : '' ?>><?= $d['icon'] ?><?= htmlspecialchars($p['title']) ?></span>
                     <span class="vk-page-pick-url"><?= htmlspecialchars($p['url']) ?></span>
                 </div>
                 <?php endforeach; ?>

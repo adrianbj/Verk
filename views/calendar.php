@@ -97,7 +97,10 @@ $renderDay = function(string $dateForTask, bool $isOther = false) use ($url, $it
 
     if (isset($items[$dateForTask])) {
         foreach ($items[$dateForTask] as $item) {
-            echo '<a href="' . $item['edit'] . '" class="vk-cal-item vk-cal-pub" target="_blank" title="' . htmlspecialchars($item['title']) . '">'
+            $d = $this->pageStatusDisplay($item['status'] ?? []);
+            $calTitle = $item['title'] . ($d['label'] !== '' ? ' (' . $d['label'] . ')' : '');
+            echo '<a href="' . $item['edit'] . '" class="vk-cal-item vk-cal-pub ' . $d['class'] . '" target="_blank" title="' . htmlspecialchars($calTitle) . '">'
+                . $d['icon']
                 . htmlspecialchars(mb_strimwidth($item['title'], 0, 22, '…'))
                 . '</a>';
         }

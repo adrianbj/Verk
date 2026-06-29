@@ -425,7 +425,8 @@ ob_start();
                 <?php foreach ($upcoming as $item): ?>
                 <article class="vk-mini-row">
                     <div class="vk-mini-main">
-                        <a href="<?= $item['edit'] ?>" target="_blank" class="vk-mini-title"><?= htmlspecialchars($item['title']) ?></a>
+                        <?php $d = $this->pageStatusDisplay($item['status'] ?? []); ?>
+                        <a href="<?= $item['edit'] ?>" target="_blank" class="vk-mini-title <?= $d['class'] ?>"<?= $d['label'] !== '' ? ' title="' . htmlspecialchars($d['label']) . '"' : '' ?>><?= $d['icon'] ?><?= htmlspecialchars($item['title']) ?></a>
                         <div class="vk-mini-meta"><span><?= htmlspecialchars($item['date']) ?></span></div>
                     </div>
                     <div class="vk-mini-side">
@@ -458,12 +459,12 @@ ob_start();
                         <a href="<?= $url ?>?view=task-edit&id=<?= (int)$t['id'] ?>&return_url=<?= $dashboardReturnParam ?>" class="vk-mini-title"><?= htmlspecialchars($t['title']) ?></a>
                         <div class="vk-mini-meta">
                             <span><?= __('TASK') ?>-<?= (int)$t['id'] ?></span>
-                            <?php if (!empty($t['linked_page_title'])): ?><span><?= htmlspecialchars((string)$t['linked_page_title']) ?></span><?php endif; ?>
+                            <?php if (!empty($t['linked_page_title'])): $dlp = $this->pageStatusDisplay($t['linked_page_status'] ?? []); ?><span class="<?= $dlp['class'] ?>"<?= $dlp['label'] !== '' ? ' title="' . htmlspecialchars($dlp['label']) . '"' : '' ?>><?= $dlp['icon'] ?><?= htmlspecialchars((string)$t['linked_page_title']) ?></span><?php endif; ?>
                             <?php if ($t['due_date']): ?><span class="vk-quarter-inline"><?= htmlspecialchars($this->quarterLabelForDate($t['due_date'])) ?></span><?php endif; ?>
                         </div>
-                        <?php if (!empty($t['linked_page_title'])): ?>
-                        <a href="<?= $t['linked_page_edit'] ?>" class="vk-chip" target="_blank">
-                            <i class="fa fa-pencil-square-o"></i> <?= htmlspecialchars(mb_strimwidth((string)$t['linked_page_title'], 0, 34, '...')) ?>
+                        <?php if (!empty($t['linked_page_title'])): $dchip = $this->pageStatusDisplay($t['linked_page_status'] ?? []); ?>
+                        <a href="<?= $t['linked_page_edit'] ?>" class="vk-chip <?= $dchip['class'] ?>" target="_blank"<?= $dchip['label'] !== '' ? ' title="' . htmlspecialchars($dchip['label']) . '"' : '' ?>>
+                            <i class="fa fa-pencil-square-o"></i> <?= $dchip['icon'] ?><?= htmlspecialchars(mb_strimwidth((string)$t['linked_page_title'], 0, 34, '...')) ?>
                         </a>
                         <?php endif; ?>
                     </div>
