@@ -425,7 +425,7 @@ class Verk extends Process implements Module, ConfigurableModule {
         $unassignedTaskCount = (int)$stmt->fetchColumn();
 
         // Audit quick summary
-        $auditSummary = $this->getAuditSummary();
+        $auditSummary = $this->getAuditSummary(true);
 
         // Selected quarter sprint plan
         $stmt = $db->prepare(
@@ -1186,7 +1186,7 @@ class Verk extends Process implements Module, ConfigurableModule {
         foreach (explode("\n", $raw) as $line) {
             $line = trim($line);
             if (!$line || str_starts_with($line, '#')) continue;
-            // format: Label | scope selector | field.path | message
+            // format: Label | scope selector | field.path | message | users
             $parts = array_map('trim', explode('|', $line));
             if (count($parts) >= 4) {
                 $rules[] = $this->normalizeAuditRule([
@@ -1194,6 +1194,7 @@ class Verk extends Process implements Module, ConfigurableModule {
                     'selector' => $parts[1],
                     'field'    => $parts[2],
                     'message'  => $parts[3] ?: $this->_('Field is empty'),
+                    'users'    => $parts[4] ?? '',
                 ]);
             } elseif (count($parts) >= 2) {
                 // Previous versions stored an empty-field selector in column two.
@@ -1425,11 +1426,21 @@ class Verk extends Process implements Module, ConfigurableModule {
             if ($field !== '') $selector = implode(', ', $scope);
         }
 
+        $rawUsers = $rule['users'] ?? [];
+        if (is_string($rawUsers)) $rawUsers = explode(',', $rawUsers);
+        $users = [];
+        foreach ((array)$rawUsers as $name) {
+            $name = strtolower(trim((string)$name));
+            $name = preg_replace('/[^a-z0-9\-_.]/', '', $name) ?? '';
+            if ($name !== '' && !in_array($name, $users, true)) $users[] = $name;
+        }
+
         return [
             'label'    => trim((string)($rule['label'] ?? $this->_('Audit rule'))),
             'selector' => $selector ?: 'template!=admin',
             'field'    => preg_replace('/[^A-Za-z0-9_.*]/', '', $field) ?? '',
             'message'  => trim((string)($rule['message'] ?? $this->_('Field is empty'))),
+            'users'    => $users,
         ];
     }
 
@@ -1607,10 +1618,23 @@ class Verk extends Process implements Module, ConfigurableModule {
         return false;
     }
 
-    protected function getAuditSummary(): array {
-        $rules  = $this->getAuditRules();
-        $summary = [];
+    /**
+     * A rule with no users listed is global (visible to everyone). Otherwise it
+     * is visible only to the named users. No superuser override — the dashboard
+     * "My Content Audit" card stays personal, consistent with "My Tasks".
+     */
+    protected function auditRuleVisibleToUser(array $rule, string $userName): bool {
+        $users = $rule['users'] ?? [];
+        if (empty($users)) return true;
+        return in_array(strtolower(trim($userName)), $users, true);
+    }
+
+    protected function getAuditSummary(bool $onlyMine = false): array {
+        $rules    = $this->getAuditRules();
+        $userName = $onlyMine ? (string)$this->wire('user')->name : '';
+        $summary  = [];
         foreach ($rules as $i => $rule) {
+            if ($onlyMine && !$this->auditRuleVisibleToUser($rule, $userName)) continue;
             $result = $this->runAuditRule($rule);
             $count = (int)($result['total'] ?? 0);
             $summary[] = ['label' => $rule['label'], 'count' => $count, 'index' => $i];

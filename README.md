@@ -36,7 +36,7 @@ If this project helps your work, consider supporting future development: [GitHub
 - **Quarter planning** — fiscal quarter start month, sprint quarter filters, date planning helpers, and quarter labels on tasks
 - **Rich text** — task descriptions, comments, note content, and sprint goals use TinyMCE when `InputfieldTinyMCE` is installed
 - **DOCX exports** — task lists, notes, sprints, and knowledge base exports
-- **Audit rules** — plain text config: `Label | Scope selector | Field path | Message`, with dot-notation subfields
+- **Audit rules** — plain text config: `Label | Scope selector | Field path | Message | Users`, with dot-notation subfields; the optional `Users` column (comma-separated usernames) limits a rule to those users on the dashboard's "My Content Audit" card
 - **Return-aware forms** — create/edit flows can preserve filtered list URLs and return users to the exact context they came from
 
 ## Requirements
@@ -83,6 +83,7 @@ Empty body text | template!=admin | body | Body field empty
 Missing SEO title | template!=admin | seo.title | SEO title not set
 Missing city | template=location | address.city | City is missing
 Missing price amount | template=product | prices.*.amount | Price amount is empty
+Needs clinical review | template=message, completed_reviews!=1 |  | Needs clinical review | john-smith,jane-brown
 ```
 
 Columns:
@@ -91,6 +92,7 @@ Columns:
 2. `Scope selector` — standard ProcessWire selector used to find candidate pages.
 3. `Field path` — ProcessWire field name or dot-notation subfield path to test.
 4. `Message` — displayed when the field path is empty or unavailable.
+5. `Users` — optional comma-separated ProcessWire usernames. When set, the rule appears only on those users' "My Content Audit" dashboard card; leave it empty for a rule visible to everyone. (The full Content Audit page always lists every rule.)
 
 ## Architecture decision
 

@@ -242,12 +242,12 @@ ob_start();
         <?php if ($auditSummary): ?>
         <div class="uk-card uk-card-default vk-card-stack vk-dashboard-card">
             <div class="uk-card-header vk-card-header-row">
-                <h3 class="vk-card-title"><?= __('Content Audit') ?></h3>
+                <h3 class="vk-card-title"><?= __('My Content Audit') ?></h3>
                 <a href="<?= $url ?>?view=audit" class="vk-card-action"><?= __('Run audit') ?> <i class="fa fa-arrow-right"></i></a>
             </div>
             <div class="uk-card-body vk-card-body-flush">
                 <?php foreach ($auditSummary as $a): ?>
-                <a href="<?= $url ?>?view=audit&rule=<?= $a['index'] ?>" class="vk-audit-item">
+                <a href="<?= $url ?>?view=audit&rule=<?= (int)$a['index'] ?>" class="vk-audit-item">
                     <span class="vk-audit-item-label"><?= htmlspecialchars($a['label']) ?></span>
                     <span class="vk-audit-count <?= $a['count'] > 0 ? 'is-warning' : 'is-success' ?>">
                         <?= sprintf(__('%d pages'), $a['count']) ?>
