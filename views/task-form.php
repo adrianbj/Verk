@@ -375,7 +375,7 @@ ob_start();
                     <input type="hidden" name="task_id" value="<?= $t['id'] ?>">
                     <input type="hidden" name="back" value="<?= htmlspecialchars($backUrl) ?>">
                     <div class="vk-rich-editor vk-comment-editor">
-                        <?= $this->renderRichTextEditor('text', '', 180) ?>
+                        <?= $this->renderRichTextEditor('text', '', 280) ?>
                     </div>
                     <button type="submit" class="uk-button uk-button-primary uk-button-small vk-button-stack"><?= __('Post') ?></button>
                 </form>
