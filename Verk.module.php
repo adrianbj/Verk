@@ -67,6 +67,7 @@ class Verk extends Process implements Module, ConfigurableModule {
             'notify_assignee' => 1,
             'notify_collaborator' => 1,
             'notify_reviewer' => 1,
+            'notify_comment' => 1,
         ];
     }
 
@@ -1204,6 +1205,7 @@ class Verk extends Process implements Module, ConfigurableModule {
             'notify_assignee' => $has('notify_assignee') ? (int)(bool)$input->post('notify_assignee') : (int)$current['notify_assignee'],
             'notify_collaborator' => $has('notify_collaborator') ? (int)(bool)$input->post('notify_collaborator') : (int)$current['notify_collaborator'],
             'notify_reviewer' => $has('notify_reviewer') ? (int)(bool)$input->post('notify_reviewer') : (int)$current['notify_reviewer'],
+            'notify_comment' => $has('notify_comment') ? (int)(bool)$input->post('notify_comment') : (int)$current['notify_comment'],
             // saveConfig() with an array replaces the whole config blob, so carry
             // over keys this form doesn't manage (otherwise they're wiped).
             'audit_rules' => (string)($current['audit_rules'] ?? ''),

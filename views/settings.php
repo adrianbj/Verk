@@ -283,6 +283,7 @@ ob_start();
                         <label><input type="hidden" name="notify_assignee" value="0"><input type="checkbox" name="notify_assignee" value="1"<?= $checked($cfg['notify_assignee']) ?>><span><strong><?= __('Assignee') ?></strong><small><?= __('Email when set as a task assignee') ?></small></span></label>
                         <label><input type="hidden" name="notify_collaborator" value="0"><input type="checkbox" name="notify_collaborator" value="1"<?= $checked($cfg['notify_collaborator']) ?>><span><strong><?= __('Collaborator') ?></strong><small><?= __('Email when added as a collaborator') ?></small></span></label>
                         <label><input type="hidden" name="notify_reviewer" value="0"><input type="checkbox" name="notify_reviewer" value="1"<?= $checked($cfg['notify_reviewer']) ?>><span><strong><?= __('Reviewer') ?></strong><small><?= __('Email when added as a reviewer') ?></small></span></label>
+                        <label><input type="hidden" name="notify_comment" value="0"><input type="checkbox" name="notify_comment" value="1"<?= $checked($cfg['notify_comment']) ?>><span><strong><?= __('Comment') ?></strong><small><?= __('Email connected users when a comment or review decision is added') ?></small></span></label>
                     </div>
 
                     <div class="vk-form-actions">
