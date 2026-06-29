@@ -128,4 +128,82 @@ class VerkNotify {
             $this->module->wire('log')->save('verk-notify', 'sendPlain failed: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Notify a task's connected users (assignee + reviewers + collaborators)
+     * that a comment or review decision was added. Never emails the author.
+     * $kind: 'comment' | 'approved' | 'changes_requested'.
+     */
+    public function commentAdded(int $taskId, string $title, int $authorId, string $commentText, string $kind = 'comment'): void {
+        if (!$this->cfgOn('notify_comment')) return;
+
+        $recipients = array_values(array_diff($this->connectedUserIds($taskId), [$authorId]));
+        if (!$recipients) return;
+
+        // Subject + body verb vary by kind; default covers any unexpected value.
+        switch ($kind) {
+            case 'approved':
+                $subject = sprintf('[Verk] Task approved: "%s"', $title);
+                $verb = 'approved';
+                break;
+            case 'changes_requested':
+                $subject = sprintf('[Verk] Changes requested: "%s"', $title);
+                $verb = 'requested changes on';
+                break;
+            default:
+                $subject = sprintf('[Verk] New comment on "%s"', $title);
+                $verb = 'commented on';
+                break;
+        }
+
+        // Comment text is sanitized HTML; build a plain-text excerpt for the email.
+        $plain = trim(html_entity_decode(strip_tags($commentText), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        $excerpt = $plain === '' ? '' : $this->module->wire('sanitizer')->truncate($plain, 200);
+
+        $base    = $this->deskUrl();
+        $taskUrl = $base . '?view=task-edit&id=' . $taskId;
+        $actor   = $this->actorName($authorId);
+
+        foreach ($recipients as $uid) {
+            $to = $this->recipient((int) $uid);
+            if (!$to) continue;
+
+            $body = sprintf(
+                "Hi %s,\n\n%s %s the task: \"%s\"\n",
+                $to['name'] ?: 'there',
+                $actor,
+                $verb,
+                $title
+            );
+            if ($excerpt !== '') {
+                $body .= sprintf("\n%s\n", $excerpt);
+            }
+            $body .= sprintf("\nOpen the task:\n%s\n", $taskUrl);
+
+            $this->sendPlain($to['email'], $subject, $body);
+        }
+    }
+
+    /** Unique user ids connected to a task: assignee + reviewers + collaborators. */
+    protected function connectedUserIds(int $taskId): array {
+        if ($taskId < 1) return [];
+        $db  = $this->module->wire('database');
+        $ids = [];
+
+        $stmt = $db->prepare("SELECT assignee_id FROM vk_tasks WHERE id = :tid");
+        $stmt->execute([':tid' => $taskId]);
+        $assignee = (int) $stmt->fetchColumn();
+        if ($assignee > 0) $ids[] = $assignee;
+
+        foreach (['vk_task_reviewers', 'vk_task_collaborators'] as $table) {
+            $stmt = $db->prepare("SELECT user_id FROM $table WHERE task_id = :tid");
+            $stmt->execute([':tid' => $taskId]);
+            foreach ($stmt->fetchAll(\PDO::FETCH_COLUMN) as $uid) {
+                $uid = (int) $uid;
+                if ($uid > 0) $ids[] = $uid;
+            }
+        }
+
+        return array_values(array_unique($ids));
+    }
 }

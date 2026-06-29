@@ -67,6 +67,7 @@ class Verk extends Process implements Module, ConfigurableModule {
             'notify_assignee' => 1,
             'notify_collaborator' => 1,
             'notify_reviewer' => 1,
+            'notify_comment' => 1,
         ];
     }
 
@@ -1117,6 +1118,11 @@ class Verk extends Process implements Module, ConfigurableModule {
         if ($text && $taskId && $this->fwTaskExists($taskId)) {
             $stmt = $db->prepare("INSERT INTO vk_comments (task_id, user_id, text, created_at) VALUES (:tid, :uid, :text, NOW())");
             $stmt->execute([':tid' => $taskId, ':uid' => $user->id, ':text' => $text]);
+
+            $titleStmt = $db->prepare("SELECT title FROM vk_tasks WHERE id = :tid");
+            $titleStmt->execute([':tid' => $taskId]);
+            $title = (string) $titleStmt->fetchColumn();
+            $this->notify->commentAdded($taskId, $title, (int) $user->id, $text, 'comment');
         } elseif ($text && $taskId) {
             $this->error($this->_('Task does not exist.'));
         }
@@ -1164,6 +1170,8 @@ class Verk extends Process implements Module, ConfigurableModule {
         $db->prepare("INSERT INTO vk_comments (task_id, user_id, text, kind, created_at) VALUES (:tid, :uid, :text, :kind, NOW())")
            ->execute([':tid' => $taskId, ':uid' => $user->id, ':text' => $text, ':kind' => $decision]);
 
+        $this->notify->commentAdded($taskId, (string) $task['title'], (int) $user->id, $text, $decision);
+
         if ($task['status'] === 'review') {
             $newStatus = $decision === 'approved' ? 'done' : 'in_progress';
             $db->prepare("UPDATE vk_tasks SET status = :s WHERE id = :id")->execute([':s' => $newStatus, ':id' => $taskId]);
@@ -1204,6 +1212,7 @@ class Verk extends Process implements Module, ConfigurableModule {
             'notify_assignee' => $has('notify_assignee') ? (int)(bool)$input->post('notify_assignee') : (int)$current['notify_assignee'],
             'notify_collaborator' => $has('notify_collaborator') ? (int)(bool)$input->post('notify_collaborator') : (int)$current['notify_collaborator'],
             'notify_reviewer' => $has('notify_reviewer') ? (int)(bool)$input->post('notify_reviewer') : (int)$current['notify_reviewer'],
+            'notify_comment' => $has('notify_comment') ? (int)(bool)$input->post('notify_comment') : (int)$current['notify_comment'],
             // saveConfig() with an array replaces the whole config blob, so carry
             // over keys this form doesn't manage (otherwise they're wiped).
             'audit_rules' => (string)($current['audit_rules'] ?? ''),
