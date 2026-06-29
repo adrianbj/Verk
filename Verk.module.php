@@ -1462,11 +1462,14 @@ class Verk extends Process implements Module, ConfigurableModule {
                 if (!$this->auditValueIsEmpty($this->auditDotValue($p, $field))) continue;
             }
             $out[] = [
-                'id'       => $p->id,
-                'title'    => $this->pageTitleForDisplay($p),
-                'template' => (string)$p->template,
-                'edit'     => $this->wire('config')->urls->admin . 'page/edit/?id=' . $p->id,
-                'url'      => $p->url,
+                'id'          => $p->id,
+                'title'       => $this->pageTitleForDisplay($p),
+                'template'    => (string)$p->template,
+                'edit'        => $this->wire('config')->urls->admin . 'page/edit/?id=' . $p->id,
+                'url'         => $p->url,
+                'hidden'      => $p->isHidden(),
+                'unpublished' => $p->isUnpublished(),
+                'trashed'     => $p->isTrash(),
             ];
         }
         return ['pages' => $out, 'total' => count($out)];
