@@ -1118,6 +1118,11 @@ class Verk extends Process implements Module, ConfigurableModule {
         if ($text && $taskId && $this->fwTaskExists($taskId)) {
             $stmt = $db->prepare("INSERT INTO vk_comments (task_id, user_id, text, created_at) VALUES (:tid, :uid, :text, NOW())");
             $stmt->execute([':tid' => $taskId, ':uid' => $user->id, ':text' => $text]);
+
+            $titleStmt = $db->prepare("SELECT title FROM vk_tasks WHERE id = :tid");
+            $titleStmt->execute([':tid' => $taskId]);
+            $title = (string) $titleStmt->fetchColumn();
+            $this->notify->commentAdded($taskId, $title, (int) $user->id, $text, 'comment');
         } elseif ($text && $taskId) {
             $this->error($this->_('Task does not exist.'));
         }
@@ -1164,6 +1169,8 @@ class Verk extends Process implements Module, ConfigurableModule {
 
         $db->prepare("INSERT INTO vk_comments (task_id, user_id, text, kind, created_at) VALUES (:tid, :uid, :text, :kind, NOW())")
            ->execute([':tid' => $taskId, ':uid' => $user->id, ':text' => $text, ':kind' => $decision]);
+
+        $this->notify->commentAdded($taskId, (string) $task['title'], (int) $user->id, $text, $decision);
 
         if ($task['status'] === 'review') {
             $newStatus = $decision === 'approved' ? 'done' : 'in_progress';
