@@ -16,6 +16,7 @@ class Verk extends Process implements Module, ConfigurableModule {
 
     private VerkExportService $export;
     public VerkFiles $files;
+    public VerkNotify $notify;
 
     public static function getModuleInfo(): array {
         return [
@@ -62,6 +63,11 @@ class Verk extends Process implements Module, ConfigurableModule {
             'page_widget_show_quarter' => 1,
             'page_widget_show_assignee' => 1,
             'assignee_roles' => '',
+            'notify_enabled' => 1,
+            'notify_assignee' => 1,
+            'notify_collaborator' => 1,
+            'notify_reviewer' => 1,
+            'notify_comment' => 1,
         ];
     }
 
@@ -116,6 +122,8 @@ class Verk extends Process implements Module, ConfigurableModule {
         $this->export = new VerkExportService($this);
         require_once __DIR__ . '/VerkFiles.php';
         $this->files = new VerkFiles($this);
+        require_once __DIR__ . '/VerkNotify.php';
+        $this->notify = new VerkNotify($this);
         // Inject task widget into page editor
         $this->addHookAfter('ProcessPageEdit::buildForm', $this, 'hookPageEditWidget');
     }
@@ -901,6 +909,20 @@ class Verk extends Process implements Module, ConfigurableModule {
         if ($returnUrl) $editUrl .= '&return_url=' . rawurlencode($returnUrl);
         $this->requireOwnerForExisting('vk_tasks', $id);
 
+        // Snapshot current membership before writes, to detect newly-added users.
+        $notifyBefore = ['assignee' => 0, 'reviewer' => [], 'collaborator' => []];
+        if ($id) {
+            $bStmt = $db->prepare("SELECT assignee_id FROM vk_tasks WHERE id = :id");
+            $bStmt->execute([':id' => $id]);
+            $notifyBefore['assignee'] = (int) $bStmt->fetchColumn();
+            $rPrev = $db->prepare("SELECT user_id FROM vk_task_reviewers WHERE task_id = :tid");
+            $rPrev->execute([':tid' => $id]);
+            $notifyBefore['reviewer'] = array_map('intval', $rPrev->fetchAll(\PDO::FETCH_COLUMN));
+            $cPrev = $db->prepare("SELECT user_id FROM vk_task_collaborators WHERE task_id = :tid");
+            $cPrev->execute([':tid' => $id]);
+            $notifyBefore['collaborator'] = array_map('intval', $cPrev->fetchAll(\PDO::FETCH_COLUMN));
+        }
+
         $title = substr($this->san($input->post('title')), 0, 255);
         if (!$title) {
             $this->error($this->_('Title is required.'));
@@ -999,6 +1021,14 @@ class Verk extends Process implements Module, ConfigurableModule {
             foreach ($collaboratorIds as $cid) $insC->execute([':tid' => $id, ':uid' => $cid]);
         }
 
+        // Notify users newly added to a role on this task.
+        $notifyAfter = [
+            'assignee'     => (int) ($assigneeId ?? 0),
+            'reviewer'     => array_values($reviewerIds),
+            'collaborator' => array_values($collaboratorIds),
+        ];
+        $this->notify->membershipChanged($id, $title, $notifyBefore, $notifyAfter, (int) $user->id);
+
         if ($returnUrl) $this->wire('session')->redirect($returnUrl);
         $this->redirect('task-edit', $id);
     }
@@ -1088,6 +1118,11 @@ class Verk extends Process implements Module, ConfigurableModule {
         if ($text && $taskId && $this->fwTaskExists($taskId)) {
             $stmt = $db->prepare("INSERT INTO vk_comments (task_id, user_id, text, created_at) VALUES (:tid, :uid, :text, NOW())");
             $stmt->execute([':tid' => $taskId, ':uid' => $user->id, ':text' => $text]);
+
+            $titleStmt = $db->prepare("SELECT title FROM vk_tasks WHERE id = :tid");
+            $titleStmt->execute([':tid' => $taskId]);
+            $title = (string) $titleStmt->fetchColumn();
+            $this->notify->commentAdded($taskId, $title, (int) $user->id, $text, 'comment');
         } elseif ($text && $taskId) {
             $this->error($this->_('Task does not exist.'));
         }
@@ -1135,6 +1170,8 @@ class Verk extends Process implements Module, ConfigurableModule {
         $db->prepare("INSERT INTO vk_comments (task_id, user_id, text, kind, created_at) VALUES (:tid, :uid, :text, :kind, NOW())")
            ->execute([':tid' => $taskId, ':uid' => $user->id, ':text' => $text, ':kind' => $decision]);
 
+        $this->notify->commentAdded($taskId, (string) $task['title'], (int) $user->id, $text, $decision);
+
         if ($task['status'] === 'review') {
             $newStatus = $decision === 'approved' ? 'done' : 'in_progress';
             $db->prepare("UPDATE vk_tasks SET status = :s WHERE id = :id")->execute([':s' => $newStatus, ':id' => $taskId]);
@@ -1171,6 +1208,11 @@ class Verk extends Process implements Module, ConfigurableModule {
             'page_widget_show_quarter' => $has('page_widget_show_quarter') ? (int)(bool)$input->post('page_widget_show_quarter') : (int)$current['page_widget_show_quarter'],
             'page_widget_show_assignee' => $has('page_widget_show_assignee') ? (int)(bool)$input->post('page_widget_show_assignee') : (int)$current['page_widget_show_assignee'],
             'assignee_roles' => $has('assignee_roles') ? $this->sanRoleList((string)$input->post('assignee_roles')) : (string)($current['assignee_roles'] ?? ''),
+            'notify_enabled' => $has('notify_enabled') ? (int)(bool)$input->post('notify_enabled') : (int)$current['notify_enabled'],
+            'notify_assignee' => $has('notify_assignee') ? (int)(bool)$input->post('notify_assignee') : (int)$current['notify_assignee'],
+            'notify_collaborator' => $has('notify_collaborator') ? (int)(bool)$input->post('notify_collaborator') : (int)$current['notify_collaborator'],
+            'notify_reviewer' => $has('notify_reviewer') ? (int)(bool)$input->post('notify_reviewer') : (int)$current['notify_reviewer'],
+            'notify_comment' => $has('notify_comment') ? (int)(bool)$input->post('notify_comment') : (int)$current['notify_comment'],
             // saveConfig() with an array replaces the whole config blob, so carry
             // over keys this form doesn't manage (otherwise they're wiped).
             'audit_rules' => (string)($current['audit_rules'] ?? ''),
@@ -2545,6 +2587,11 @@ class Verk extends Process implements Module, ConfigurableModule {
                 ':uid'      => $user->id,
             ]);
             $created++;
+        }
+
+        // One digest email to the bulk assignee (skips actor, gated by config).
+        if ($assigneeId) {
+            $this->notify->bulkAssigned((int) $assigneeId, $created, (int) $user->id);
         }
 
         $this->message(sprintf($this->_n('%d task created.', '%d tasks created.', $created), $created));
