@@ -2758,7 +2758,6 @@ body.dark-theme .vk-shell {
     gap: 8px;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     margin: 0 0 16px;
-    max-width: 1180px;
 }
 
 .vk-task-status-card {
