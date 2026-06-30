@@ -3970,10 +3970,10 @@ body.dark-theme .vk-shell {
 }
 
 .vk-task-filter-group.is-tabs {
-    align-items: center;
+    align-items: start;
     display: grid;
-    gap: 8px;
-    grid-template-columns: 74px minmax(0, 1fr);
+    gap: 6px;
+    grid-template-columns: minmax(0, 1fr);
 }
 
 .vk-task-filter-group.is-tabs .vk-task-filter-label {
