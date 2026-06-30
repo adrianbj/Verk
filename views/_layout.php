@@ -4894,7 +4894,6 @@ a.vk-sprint-summary-card.is-active {
     gap: 8px;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     margin: 0 0 14px;
-    max-width: 1180px;
 }
 
 .vk-calendar-plan-card {
@@ -4949,7 +4948,6 @@ a.vk-sprint-summary-card.is-active {
     gap: 10px;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     margin-bottom: 14px;
-    max-width: 1180px;
 }
 
 .vk-cal-summary > div {
@@ -4985,7 +4983,6 @@ a.vk-sprint-summary-card.is-active {
     display: flex;
     gap: 12px;
     margin: 18px 0 14px;
-    max-width: 1180px;
     padding: 12px 14px;
 }
 
@@ -5183,7 +5180,6 @@ a.vk-sprint-summary-card.is-active {
 
 .vk-cal-agenda {
     margin-top: 18px;
-    max-width: 1180px;
 }
 
 .vk-cal-agenda .uk-card-header {
