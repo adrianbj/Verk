@@ -4150,6 +4150,7 @@ body.dark-theme .vk-shell {
     color: var(--vk-muted);
     font-size: .78rem;
     line-height: 1.5;
+    margin-right: 14px;
 }
 
 .vk-pagination-wrap {
