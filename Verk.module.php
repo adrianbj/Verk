@@ -386,7 +386,7 @@ class Verk extends Process implements Module, ConfigurableModule {
 
         // Recent tasks (all) — paginated
         $recentPage    = max(1, (int)$input->get('recent_page', 'int') ?: 1);
-        $recentLimit   = 4;
+        $recentLimit   = 8;
         $recentOffset  = ($recentPage - 1) * $recentLimit;
 
         $stmt = $db->query("SELECT COUNT(*) FROM vk_tasks WHERE status != 'done'");
