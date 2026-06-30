@@ -5107,6 +5107,14 @@ a.vk-sprint-summary-card.is-active {
     width: 84px;
 }
 
+/* The assignee select holds longer text ("All assignees", user names) and
+   should not be clamped to the narrow month/quarter width. */
+.vk-cal-jump select[name="assignee_id"] {
+    width: auto;
+    min-width: 140px;
+    max-width: 200px;
+}
+
 .vk-cal-jump .uk-input {
     width: 82px;
 }
