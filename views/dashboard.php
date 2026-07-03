@@ -77,7 +77,7 @@ ob_start();
             <progress class="uk-progress vk-sprint-progress" value="<?= (int)$quarterProgress ?>" max="100"></progress>
         </div>
     </div>
-    <a class="vk-dashboard-focus-card <?= $overdueTaskCount > 0 ? 'is-danger' : '' ?>" href="<?= $url ?>?view=tasks&sort=due">
+    <a class="vk-dashboard-focus-card <?= $overdueTaskCount > 0 ? 'is-danger' : '' ?>" href="<?= $url ?>?view=tasks&date_state=overdue&sort=due">
         <span><?= __('Overdue') ?></span>
         <strong><?= (int)$overdueTaskCount ?></strong>
         <small><?= __('Open tasks past due date') ?></small>
@@ -124,7 +124,7 @@ ob_start();
         <span><?= __('Due this quarter') ?></span>
         <strong><?= (int)$quarterTaskStats['open_count'] ?></strong>
     </a>
-    <a href="<?= $url ?>?view=tasks&sort=due" class="vk-dashboard-queue-item <?= $overdueTaskCount > 0 ? 'is-danger' : '' ?>">
+    <a href="<?= $url ?>?view=tasks&date_state=overdue&sort=due" class="vk-dashboard-queue-item <?= $overdueTaskCount > 0 ? 'is-danger' : '' ?>">
         <span><?= __('Overdue') ?></span>
         <strong><?= (int)$overdueTaskCount ?></strong>
     </a>
