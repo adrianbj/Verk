@@ -16,7 +16,7 @@ require_once __DIR__ . '/src/Traits/VerkMetaTrait.php';
  *
  * @author  Maxim Semenov <maxim@smnv.org> (smnv.org)
  * @license MIT
- * @version 152
+ * @version 153
  */
 class Verk extends Process implements Module, ConfigurableModule {
 
@@ -34,7 +34,7 @@ class Verk extends Process implements Module, ConfigurableModule {
     public static function getModuleInfo(): array {
         return [
             'title'    => 'Verk',
-            'version'  => 152,
+            'version'  => 153,
             'summary'  => 'Site ops layer for ProcessWire: tasks, sprints, quarter planning, editorial calendar, content audit, and knowledge base.',
             'author'   => 'Maxim Semenov',
             'href'     => 'https://smnv.org',
@@ -500,7 +500,8 @@ class Verk extends Process implements Module, ConfigurableModule {
         ];
         if (!isset($sortSqlMap[$sort])) $sort = 'default';
         $quarter  = (int)$input->get('quarter');
-        $taskDateState = $input->get('date_state', 'string') === 'none' ? 'none' : '';
+        $dateStateInput = $input->get('date_state', 'string');
+        $taskDateState = in_array($dateStateInput, ['none', 'overdue'], true) ? $dateStateInput : '';
         $taskQuarterYear = (int)$input->get('year');
         if (!$taskQuarterYear) $taskQuarterYear = (int)$this->quarterContextForDate(date('Y-m-d'))['year'];
         $taskQuarter = $quarter ? $this->quarterContext($quarter, $taskQuarterYear) : null;
@@ -531,6 +532,9 @@ class Verk extends Process implements Module, ConfigurableModule {
             $params[':quarter_end'] = $taskQuarter['end'];
         } elseif ($taskDateState === 'none') {
             $where[] = 't.due_date IS NULL';
+        } elseif ($taskDateState === 'overdue') {
+            $where[] = "t.due_date IS NOT NULL AND t.due_date < :today AND t.status != 'done'";
+            $params[':today'] = date('Y-m-d');
         }
 
         $whereSql = implode(' AND ', $where);
@@ -598,6 +602,9 @@ class Verk extends Process implements Module, ConfigurableModule {
             $statusBaseParams[':quarter_end'] = $taskQuarter['end'];
         } elseif ($taskDateState === 'none') {
             $statusBaseWhere[] = 't.due_date IS NULL';
+        } elseif ($taskDateState === 'overdue') {
+            $statusBaseWhere[] = "t.due_date IS NOT NULL AND t.due_date < :today AND t.status != 'done'";
+            $statusBaseParams[':today'] = date('Y-m-d');
         }
         $statusBaseSql = implode(' AND ', $statusBaseWhere);
         $statusStmt = $db->prepare(

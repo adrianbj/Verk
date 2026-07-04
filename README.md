@@ -58,7 +58,7 @@ If this project helps your work, consider supporting future development: [GitHub
 
 ## Upgrade
 
-After copying a new version into `site/modules/Verk/`, run **Admin > Modules > Refresh** so ProcessWire detects the module version bump. Version `1.5.2` is published as module version `152`; the upgrade hook runs `VerkDB::migrate()` and keeps existing Verk data intact.
+After copying a new version into `site/modules/Verk/`, run **Admin > Modules > Refresh** so ProcessWire detects the module version bump. Version `1.5.3` is published as module version `153`; the upgrade hook runs `VerkDB::migrate()` and keeps existing Verk data intact.
 
 ## Versioning
 

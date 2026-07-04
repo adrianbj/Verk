@@ -26,7 +26,7 @@ $assigneeFilter  = $currentAssigneeId ?? (int)$input->get('assignee_id');
 $reviewerFilter  = $currentReviewerId ?? (int)$input->get('reviewer_id');
 $collaboratorFilter = $currentCollaboratorId ?? (int)$input->get('collaborator_id');
 $sprintFilter    = $currentSprintId ?? 0;
-$taskDateState   = $currentTaskDateState ?? ($input->get('date_state', 'string') === 'none' ? 'none' : '');
+$taskDateState   = $currentTaskDateState ?? (in_array($input->get('date_state', 'string'), ['none', 'overdue'], true) ? $input->get('date_state', 'string') : '');
 $sprints         = $sprints ?? [];
 $taskQuarter     = $taskQuarter ?? null;
 $taskQuarterLabel = $taskQuarter ? $this->quarterLabel($taskQuarter) : '';
@@ -133,6 +133,7 @@ if ($reviewerFilter) $activeFilters[] = ['label' => sprintf(__('Reviewer: %s'), 
 if ($collaboratorFilter) $activeFilters[] = ['label' => sprintf(__('Collaborator: %s'), $collaboratorFilterName ?: ('#' . (int)$collaboratorFilter)), 'href' => $buildTaskUrl(['collaborator_id' => null, 'page' => null])];
 if ($taskQuarterLabel) $activeFilters[] = ['label' => sprintf(__('Quarter: %s'), $taskQuarterLabel), 'href' => $buildTaskUrl(['quarter' => null, 'year' => null, 'page' => null])];
 if ($taskDateState === 'none') $activeFilters[] = ['label' => __('No due date'), 'href' => $buildTaskUrl(['date_state' => null, 'page' => null])];
+if ($taskDateState === 'overdue') $activeFilters[] = ['label' => __('Overdue'), 'href' => $buildTaskUrl(['date_state' => null, 'page' => null])];
 if ($sprintFilter) $activeFilters[] = ['label' => sprintf(__('Sprint: %s'), $sprintFilterName ?: ('#' . (int)$sprintFilter)), 'href' => $buildTaskUrl(['sprint_id' => null, 'page' => null])];
 if ($sortFilter !== 'default') $activeFilters[] = ['label' => sprintf(__('Sort: %s'), $sortLabels[$sortFilter]), 'href' => $buildTaskUrl(['sort' => null, 'page' => null])];
 
@@ -242,11 +243,12 @@ ob_start();
     <div class="vk-task-filter-group is-tabs">
         <div class="vk-task-filter-label"><?= __('Quarter') ?></div>
         <ul class="uk-subnav uk-subnav-pill vk-view-switcher vk-task-filter-tabs">
-            <li class="<?= !$taskQuarter && $taskDateState !== 'none' ? 'uk-active' : '' ?>"><a href="<?= $buildTaskUrl(['quarter' => null, 'year' => null, 'date_state' => null, 'page' => null]) ?>"><?= __('All quarters') ?></a></li>
+            <li class="<?= !$taskQuarter && $taskDateState === '' ? 'uk-active' : '' ?>"><a href="<?= $buildTaskUrl(['quarter' => null, 'year' => null, 'date_state' => null, 'page' => null]) ?>"><?= __('All quarters') ?></a></li>
             <?php $yearForQuarters = (int)$taskQuarterYear; ?>
             <?php for ($q = 1; $q <= 4; $q++): ?>
             <li class="<?= $taskQuarter && (int)$taskQuarter['quarter'] === $q ? 'uk-active' : '' ?>"><a href="<?= $buildTaskUrl(['quarter' => $q, 'year' => $yearForQuarters, 'date_state' => null, 'page' => null]) ?>">Q<?= $q ?></a></li>
             <?php endfor; ?>
+            <li class="<?= $taskDateState === 'overdue' ? 'uk-active' : '' ?>"><a href="<?= $buildTaskUrl(['quarter' => null, 'year' => null, 'date_state' => 'overdue', 'page' => null]) ?>"><?= __('Overdue') ?></a></li>
             <li class="<?= $taskDateState === 'none' ? 'uk-active' : '' ?>"><a href="<?= $buildTaskUrl(['quarter' => null, 'year' => null, 'date_state' => 'none', 'page' => null]) ?>"><?= __('No due date') ?></a></li>
         </ul>
     </div>

@@ -106,8 +106,15 @@ trait VerkAuditTrait {
             if ($field !== '' && !$this->wire('fields')->get($root) && !in_array($root, ['id', 'name', 'title', 'url'], true)) {
                 continue;
             }
+            // Evaluate scope with the same selector engine the dashboard audit
+            // uses (pages->find), restricted to just this page's id. Page::matches()
+            // runs in memory and silently mishandles find-directives such as
+            // include=, check_access= or status=, so it can report a page as out
+            // of scope even when the site-wide audit lists it (e.g. unpublished
+            // pages reached via include=). Scoping a real query to id keeps the
+            // page-edit widget consistent with the Content Audit report.
             try {
-                if (!$page->matches($rule['selector'])) continue;
+                if (!$this->wire('pages')->count(trim($rule['selector']) . ", id={$page->id}")) continue;
             } catch (\Exception $e) {
                 continue;
             }

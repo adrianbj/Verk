@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.3] - 2026-07-03
+
+### Fixed
+- Page Editor Widget audit gaps now evaluate rule scope with the same selector engine as Content Audit, so selectors using directives like `include=`, `check_access=`, or `status=` stay consistent.
+- Dashboard Overdue links now filter the task list to overdue open tasks instead of only sorting by due date, with matching active filter and tab state.
+- Module version bumped to `153` so ProcessWire detects the `1.5.3` patch upgrade.
+
 ## [1.5.2] - 2026-07-02
 
 ### Added
