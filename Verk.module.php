@@ -1,6 +1,7 @@
 <?php namespace ProcessWire;
 
 require_once __DIR__ . '/src/Services/VerkExportService.php';
+require_once __DIR__ . '/src/Services/VerkExternalApprovals.php';
 require_once __DIR__ . '/src/Traits/VerkUiTrait.php';
 require_once __DIR__ . '/src/Traits/VerkAuditTrait.php';
 require_once __DIR__ . '/src/Traits/VerkSprintTrait.php';
@@ -16,7 +17,7 @@ require_once __DIR__ . '/src/Traits/VerkMetaTrait.php';
  *
  * @author  Maxim Semenov <maxim@smnv.org> (smnv.org)
  * @license MIT
- * @version 153
+ * @version 160
  */
 class Verk extends Process implements Module, ConfigurableModule {
 
@@ -34,7 +35,7 @@ class Verk extends Process implements Module, ConfigurableModule {
     public static function getModuleInfo(): array {
         return [
             'title'    => 'Verk',
-            'version'  => 153,
+            'version'  => 160,
             'summary'  => 'Site ops layer for ProcessWire: tasks, sprints, quarter planning, editorial calendar, content audit, and knowledge base.',
             'author'   => 'Maxim Semenov',
             'href'     => 'https://smnv.org',
@@ -138,6 +139,15 @@ class Verk extends Process implements Module, ConfigurableModule {
         $this->notify = new VerkNotify($this);
         // Inject task widget into page editor
         $this->addHookAfter('ProcessPageEdit::buildForm', $this, 'hookPageEditWidget');
+    }
+
+    /** Public, idempotent integration API; metadata must already be redacted. */
+    public function createExternalApproval(string $provider, string $externalId, array $metadata, int $createdBy): array {
+        return (new VerkExternalApprovals($this))->create($provider, $externalId, $metadata, $createdBy);
+    }
+
+    public function getExternalApproval(string $provider, string $externalId): ?array {
+        return (new VerkExternalApprovals($this))->find($provider, $externalId);
     }
 
     public function hookPageEditWidget(HookEvent $event): void {
@@ -1180,6 +1190,33 @@ class Verk extends Process implements Module, ConfigurableModule {
             $this->error($this->_('Task does not exist.'));
             $this->wire('session')->redirect($back);
             return '';
+        }
+
+        $external = (new VerkExternalApprovals($this))->forTask($taskId);
+        if($external && $external['provider'] === 'mailbox') {
+            if(!$user->hasPermission('mailbox-confirm-links') || !$this->wire('modules')->isInstalled('Mailbox')) {
+                $this->error($this->_('Mailbox confirmation permission and the Mailbox module are required.'));
+                $this->wire('session')->redirect($back);
+                return '';
+            }
+            try {
+                $mailboxApi = $this->wire('modules')->get('Mailbox')->api($user);
+                if($decision === 'approved') $mailboxApi->approveConfirmation($external['external_id']);
+                else $mailboxApi->rejectConfirmation($external['external_id']);
+            } catch(\Throwable $error) {
+                $wanted = $decision === 'approved' ? 'approved' : 'rejected';
+                $alreadyApplied = false;
+                try {
+                    foreach($mailboxApi->proposals() as $proposal) {
+                        if(($proposal['id'] ?? '') === $external['external_id'] && ($proposal['status'] ?? '') === $wanted) $alreadyApplied = true;
+                    }
+                } catch(\Throwable $ignored) {}
+                if(!$alreadyApplied) {
+                    $this->error($this->_('Mailbox decision failed; the Verk task was not changed.'));
+                    $this->wire('session')->redirect($back);
+                    return '';
+                }
+            }
         }
 
         $db->prepare("INSERT INTO vk_comments (task_id, user_id, text, kind, created_at) VALUES (:tid, :uid, :text, :kind, NOW())")

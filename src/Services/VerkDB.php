@@ -124,10 +124,12 @@ class VerkDB {
                 KEY `user_id` (`user_id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
         ");
+
+        self::ensureExternalApprovals($db);
     }
 
     public static function uninstall($db, ?string $assetsDir = null): void {
-        foreach (['vk_time_logs', 'vk_comments', 'vk_tasks', 'vk_sprints', 'vk_notes', 'vk_files', 'vk_task_reviewers', 'vk_task_collaborators'] as $t) {
+        foreach (['vk_external_approvals', 'vk_time_logs', 'vk_comments', 'vk_tasks', 'vk_sprints', 'vk_notes', 'vk_files', 'vk_task_reviewers', 'vk_task_collaborators'] as $t) {
             $db->exec("DROP TABLE IF EXISTS `$t`");
         }
         if ($assetsDir && is_dir($assetsDir)) {
@@ -141,6 +143,7 @@ class VerkDB {
     }
 
     public static function migrate($db): void {
+        self::ensureExternalApprovals($db);
         // vk_tasks columns added in v1.0.1
         $colType = [];
         $stmt = $db->query("SHOW COLUMNS FROM `vk_tasks`");
@@ -248,5 +251,18 @@ class VerkDB {
         if (!in_array('kind', $commentCols)) {
             $db->exec("ALTER TABLE `vk_comments` ADD COLUMN `kind` ENUM('comment','approved','changes_requested') NOT NULL DEFAULT 'comment' AFTER `text`");
         }
+    }
+
+    private static function ensureExternalApprovals($db): void {
+        $db->exec("CREATE TABLE IF NOT EXISTS `vk_external_approvals` (
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `provider` VARCHAR(32) NOT NULL,
+            `external_id` VARCHAR(64) NOT NULL,
+            `task_id` INT UNSIGNED NOT NULL,
+            `created_at` DATETIME NOT NULL,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `provider_external` (`provider`, `external_id`),
+            UNIQUE KEY `task_id` (`task_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     }
 }

@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0] - 2026-08-01
+
+### Added
+- Added the idempotent `createExternalApproval()` / `getExternalApproval()` public integration API and an additive external-approval mapping table.
+- Mailbox-backed review tasks now forward approve/reject decisions through Mailbox's permission-gated API before changing Verk state; forged task text cannot create an integration mapping.
+- External approval tasks store only redacted reference metadata and never message bodies, complete URLs, query tokens, or credentials.
+
 ## [1.5.3] - 2026-07-03
 
 ### Fixed

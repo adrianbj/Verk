@@ -58,7 +58,11 @@ If this project helps your work, consider supporting future development: [GitHub
 
 ## Upgrade
 
-After copying a new version into `site/modules/Verk/`, run **Admin > Modules > Refresh** so ProcessWire detects the module version bump. Version `1.5.3` is published as module version `153`; the upgrade hook runs `VerkDB::migrate()` and keeps existing Verk data intact.
+After copying a new version into `site/modules/Verk/`, run **Admin > Modules > Refresh** so ProcessWire detects the module version bump. Version `1.6.0` is published as module version `160`; the upgrade hook runs `VerkDB::migrate()` and keeps existing Verk data intact. The additive `vk_external_approvals` table maps reviewed integration tasks without changing existing task rows; back up the database before upgrading a live site.
+
+## External approvals API
+
+Trusted installed modules may call `createExternalApproval($provider, $externalId, $redactedMetadata, $createdBy)` and `getExternalApproval($provider, $externalId)`. Creation is idempotent. Mailbox review tasks contain only host, account/folder/message references and never message bodies, full URLs, tokens, or credentials. A Mailbox decision is forwarded only when the logged-in Verk reviewer also has `mailbox-confirm-links`; Mailbox retains its own separation-of-duties and proposal-state checks.
 
 ## Versioning
 
