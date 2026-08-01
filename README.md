@@ -62,7 +62,7 @@ After copying a new version into `site/modules/Verk/`, run **Admin > Modules > R
 
 ## External approvals API
 
-Trusted installed modules may call `createExternalApproval($provider, $externalId, $redactedMetadata, $createdBy)` and `getExternalApproval($provider, $externalId)`. Creation is idempotent. Mailbox review tasks contain only host, account/folder/message references and never message bodies, full URLs, tokens, or credentials. A Mailbox decision is forwarded only when the logged-in Verk reviewer also has `mailbox-confirm-links`; Mailbox retains its own separation-of-duties and proposal-state checks.
+Trusted installed modules may call `createExternalApproval($provider, $externalId, $redactedMetadata, $createdBy)` and `getExternalApproval($provider, $externalId)`. Creation is idempotent. Mailbox review tasks contain only host, account/folder/message references and never message bodies, full URLs, tokens, or credentials. A Mailbox decision is forwarded only when the logged-in Verk reviewer also has `mailbox-api` and `mailbox-confirm-links`; Mailbox retains its own separation-of-duties and proposal-state checks.
 
 ## Versioning
 
