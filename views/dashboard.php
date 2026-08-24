@@ -12,6 +12,7 @@
  */
 $url   = $this->page->url;
 $today = date('Y-m-d');
+$cfg   = $this->getConfig();
 
 $open  = ($taskStats['open'] ?? 0) + ($taskStats['in_progress'] ?? 0) + ($taskStats['review'] ?? 0);
 $done  = $taskStats['done'] ?? 0;
@@ -191,8 +192,9 @@ ob_start();
                 <h3 class="vk-card-title"><?= __('Collaborating On') ?></h3>
                 <a href="<?= $url ?>?view=tasks&collaborator_id=<?= (int)$uid ?>" class="vk-card-action"><?= __('All mine') ?> <i class="fa fa-arrow-right"></i></a>
             </div>
+            <?php $collabStatusEditable = !empty($cfg['status_edit_collaborator']); ?>
             <?php if (!empty($myCollaborations)): ?>
-            <div class="vk-mini-list">
+            <div class="vk-mini-list"<?= $collabStatusEditable ? ' data-status-list data-remove-done data-status-endpoint="' . $url . '" data-csrf-name="' . htmlspecialchars($this->getCSRFName()) . '" data-csrf-token="' . htmlspecialchars($this->getCSRFToken()) . '"' : '' ?>>
                 <?php foreach ($myCollaborations as $c): ?>
                 <article class="vk-mini-row">
                     <div class="vk-mini-main">
@@ -202,8 +204,15 @@ ob_start();
                             <?php if ($c['due_date']): ?><span class="<?= $c['due_date'] < $today ? 'is-overdue' : '' ?>"><?= htmlspecialchars($c['due_date']) ?></span><?php endif; ?>
                         </div>
                     </div>
-                    <div class="vk-mini-side">
+                    <div class="vk-mini-side vk-mini-side-stack">
                         <span class="uk-label vk-label-<?= $c['priority'] ?>"><?= htmlspecialchars($this->priorityLabel($c['priority'])) ?></span>
+                        <?php if ($collabStatusEditable): ?>
+                        <select class="vk-status-pill" data-task-status="<?= (int)$c['id'] ?>" data-current="<?= $c['status'] ?>" aria-label="<?= __('Status') ?>">
+                            <?php foreach (['open','in_progress','review','done'] as $sv): ?>
+                            <option value="<?= $sv ?>" class="vk-status-opt-<?= $sv ?>" <?= $c['status']===$sv?'selected':'' ?>><?= htmlspecialchars($this->statusLabel($sv)) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <?php endif; ?>
                     </div>
                 </article>
                 <?php endforeach; ?>
@@ -221,8 +230,9 @@ ob_start();
                 <h3 class="vk-card-title"><?= __('My Reviews') ?></h3>
                 <a href="<?= $url ?>?view=tasks&status=review&reviewer_id=<?= (int)$uid ?>" class="vk-card-action"><?= __('All mine') ?> <i class="fa fa-arrow-right"></i></a>
             </div>
+            <?php $reviewStatusEditable = !empty($cfg['status_edit_reviewer']); ?>
             <?php if (!empty($myReviews)): ?>
-            <div class="vk-mini-list">
+            <div class="vk-mini-list"<?= $reviewStatusEditable ? ' data-status-list data-remove-done data-status-endpoint="' . $url . '" data-csrf-name="' . htmlspecialchars($this->getCSRFName()) . '" data-csrf-token="' . htmlspecialchars($this->getCSRFToken()) . '"' : '' ?>>
                 <?php foreach ($myReviews as $r): ?>
                 <article class="vk-mini-row">
                     <div class="vk-mini-main">
@@ -232,8 +242,15 @@ ob_start();
                             <?php if ($r['due_date']): ?><span class="<?= $r['due_date'] < $today ? 'is-overdue' : '' ?>"><?= htmlspecialchars($r['due_date']) ?></span><?php endif; ?>
                         </div>
                     </div>
-                    <div class="vk-mini-side">
+                    <div class="vk-mini-side vk-mini-side-stack">
                         <span class="uk-label vk-label-<?= $r['priority'] ?>"><?= htmlspecialchars($this->priorityLabel($r['priority'])) ?></span>
+                        <?php if ($reviewStatusEditable): ?>
+                        <select class="vk-status-pill" data-task-status="<?= (int)$r['id'] ?>" data-current="<?= $r['status'] ?>" aria-label="<?= __('Status') ?>">
+                            <?php foreach (['open','in_progress','review','done'] as $sv): ?>
+                            <option value="<?= $sv ?>" class="vk-status-opt-<?= $sv ?>" <?= $r['status']===$sv?'selected':'' ?>><?= htmlspecialchars($this->statusLabel($sv)) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <?php endif; ?>
                     </div>
                 </article>
                 <?php endforeach; ?>
@@ -444,7 +461,7 @@ ob_start();
             </div>
             <?php else: ?>
             <div class="uk-card-body vk-dashboard-empty">
-                <?php $cfg = $this->getConfig(); if (!$cfg['calendar_template']): ?>
+                <?php if (!$cfg['calendar_template']): ?>
                 <a href="<?= $url ?>?view=settings" class="vk-card-action"><?= __('Configure calendar template') ?> <i class="fa fa-arrow-right"></i></a>
                 <?php else: ?>
                 <span class="vk-muted-line"><?= __('No upcoming publications.') ?></span>

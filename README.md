@@ -22,7 +22,7 @@ If this project helps your work, consider supporting future development: [GitHub
 | **Content Audit** | Run PW selectors and dot-notation field checks to find missing content |
 | **Knowledge Base** | Rich editorial notes organized by category, searchable and exportable |
 | **Sprints** | Sprint planning, quarter grouping, task assignment, DOCX export, and progress tracking |
-| **Settings** | Calendar source, fiscal quarter start, assignee role scope, and configurable Page Editor Widget |
+| **Settings** | Calendar source, fiscal quarter start, assignee role scope, task status permissions, email notifications (membership and status changes), and configurable Page Editor Widget |
 
 ## Key features
 

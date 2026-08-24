@@ -300,6 +300,70 @@ trait VerkUiTrait {
         $this->requireOwner($table, $id);
     }
 
+    /**
+     * Fetch the facts needed to decide who may touch a task, plus the title and
+     * current status callers need for messaging: its creator, its assignee, and
+     * whether the current user is a listed reviewer or collaborator. One query
+     * so callers don't fan out per role.
+     */
+    protected function getTaskRoleRow(int $taskId): ?array {
+        if ($taskId <= 0) return null;
+        $uid  = (int) $this->wire('user')->id;
+        $stmt = $this->wire('database')->prepare(
+            "SELECT t.created_by, t.assignee_id, t.title, t.status,
+                    EXISTS(SELECT 1 FROM vk_task_reviewers r
+                           WHERE r.task_id = t.id AND r.user_id = :ruid)     AS is_reviewer,
+                    EXISTS(SELECT 1 FROM vk_task_collaborators c
+                           WHERE c.task_id = t.id AND c.user_id = :cuid)     AS is_collaborator
+             FROM vk_tasks t WHERE t.id = :id"
+        );
+        $stmt->execute([':id' => $taskId, ':ruid' => $uid, ':cuid' => $uid]);
+        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+    }
+
+    /**
+     * The assignee, the creator, and superusers may always change a task's
+     * status. Reviewers and collaborators may too, but only while the matching
+     * setting is enabled. Expects a row from getTaskRoleRow().
+     */
+    protected function canChangeTaskStatus(array $row): bool {
+        $user = $this->wire('user');
+        if ($user->isSuperuser()) return true;
+        $uid = (int) $user->id;
+        if ((int)($row['created_by'] ?? 0) === $uid) return true;
+        if ((int)($row['assignee_id'] ?? 0) === $uid) return true;
+        $cfg = $this->getConfig();
+        if (!empty($row['is_reviewer']) && !empty($cfg['status_edit_reviewer'])) return true;
+        if (!empty($row['is_collaborator']) && !empty($cfg['status_edit_collaborator'])) return true;
+        return false;
+    }
+
+    /**
+     * Who may approve or request changes on a task: superusers, the task's
+     * creator, and the users actually listed as its reviewers.
+     *
+     * Provider-backed tasks are exempt. VerkExternalApprovals::create() makes
+     * them with no assignee and no reviewer rows, so this rule would leave only
+     * the requester able to decide — the opposite of the separation of duties
+     * those integrations enforce. They are gated by the provider's own
+     * permission check in actionReviewDecision() instead.
+     */
+    public function canDecideReview(int $taskId, array $task): bool {
+        $user = $this->wire('user');
+        if ($user->isSuperuser()) return true;
+        if ((new VerkExternalApprovals($this))->forTask($taskId)) return true;
+        $uid = (int) $user->id;
+        if ((int)($task['created_by'] ?? 0) === $uid) return true;
+        if (isset($task['reviewer_ids'])) {
+            return in_array($uid, array_map('intval', (array) $task['reviewer_ids']), true);
+        }
+        $stmt = $this->wire('database')->prepare(
+            "SELECT 1 FROM vk_task_reviewers WHERE task_id = :tid AND user_id = :uid LIMIT 1"
+        );
+        $stmt->execute([':tid' => $taskId, ':uid' => $uid]);
+        return (bool) $stmt->fetchColumn();
+    }
+
     protected function ownerTableName(string $table): string {
         return in_array($table, ['vk_tasks', 'vk_notes', 'vk_sprints'], true) ? $table : '';
     }

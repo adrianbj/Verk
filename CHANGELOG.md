@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- Optional **Task permissions** settings: reviewers and/or collaborators can be allowed to change a task's status (including setting it to Done). Both are off by default, so existing behaviour is unchanged until an admin opts in.
+- Inline status dropdowns on the Dashboard "My Reviews" and "Collaborating On" cards, shown only when the matching permission is enabled.
+- Email notification when a task's status changes, sent to everyone on the task (creator, assignee, reviewers, collaborators) except whoever made the change. Off by default; enable it with the new **Status changes** toggle in Settings, which is also governed by the notifications master switch.
+
+### Fixed
+- Approving a review no longer accepts submissions from any user with the `verk` permission; only superusers, the task creator, and the task's listed reviewers can approve or request changes. The Approve / Request changes buttons are hidden from everyone else. Provider-backed tasks (e.g. Mailbox external approvals) are exempt and keep their own permission gating, since they carry no assignee or reviewers by design.
+
 ## [1.6.0] - 2026-08-01
 
 ### Added

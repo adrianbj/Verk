@@ -331,7 +331,7 @@ ob_start();
         <div class="uk-card uk-card-default vk-discussion-card">
             <div class="uk-card-header"><h3 class="vk-card-title"><?= __('Discussion') ?></h3></div>
             <div class="uk-card-body">
-                <?php if ($isEdit && $t['status'] === 'review'): ?>
+                <?php if ($isEdit && $t['status'] === 'review' && $this->canDecideReview((int)$t['id'], $task)): ?>
                 <form method="post" action="<?= $url ?>" class="vk-review-decision">
                     <input type="hidden" name="<?= $csrfN ?>" value="<?= $csrf ?>">
                     <input type="hidden" name="action" value="review_decision">

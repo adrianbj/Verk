@@ -9,6 +9,23 @@ trait VerkDataTrait {
         return $t ? $this->enrichTaskPage($t) : null;
     }
 
+    /**
+     * Everyone attached to a task — creator, assignee, reviewers, collaborators —
+     * as a deduplicated list of user ids. Used to decide who hears about a
+     * status change. UNION does the dedup so callers get each user once.
+     */
+    public function taskNotifyRecipients(int $taskId): array {
+        if ($taskId <= 0) return [];
+        $stmt = $this->wire('database')->prepare(
+            "SELECT created_by AS uid FROM vk_tasks WHERE id = :id1 AND created_by IS NOT NULL
+             UNION SELECT assignee_id FROM vk_tasks WHERE id = :id2 AND assignee_id IS NOT NULL
+             UNION SELECT user_id FROM vk_task_reviewers WHERE task_id = :id3
+             UNION SELECT user_id FROM vk_task_collaborators WHERE task_id = :id4"
+        );
+        $stmt->execute([':id1' => $taskId, ':id2' => $taskId, ':id3' => $taskId, ':id4' => $taskId]);
+        return array_values(array_filter(array_map('intval', $stmt->fetchAll(\PDO::FETCH_COLUMN))));
+    }
+
     protected function getNote(int $id): ?array {
         $stmt = $this->wire('database')->prepare("SELECT * FROM vk_notes WHERE id=:id");
         $stmt->execute([':id'=>$id]);

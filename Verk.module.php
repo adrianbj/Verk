@@ -81,6 +81,9 @@ class Verk extends Process implements Module, ConfigurableModule {
             'notify_assignee' => 1,
             'notify_collaborator' => 1,
             'notify_reviewer' => 1,
+            'notify_status' => 0,
+            'status_edit_reviewer' => 0,
+            'status_edit_collaborator' => 0,
         ];
     }
 
@@ -941,10 +944,13 @@ class Verk extends Process implements Module, ConfigurableModule {
 
         // Snapshot current membership before writes, to detect newly-added users.
         $notifyBefore = ['assignee' => 0, 'reviewer' => [], 'collaborator' => []];
+        $statusBefore = '';  // stays empty for new tasks, which never notify
         if ($id) {
-            $bStmt = $db->prepare("SELECT assignee_id FROM vk_tasks WHERE id = :id");
+            $bStmt = $db->prepare("SELECT assignee_id, status FROM vk_tasks WHERE id = :id");
             $bStmt->execute([':id' => $id]);
-            $notifyBefore['assignee'] = (int) $bStmt->fetchColumn();
+            $bRow = $bStmt->fetch(\PDO::FETCH_ASSOC) ?: [];
+            $notifyBefore['assignee'] = (int) ($bRow['assignee_id'] ?? 0);
+            $statusBefore = (string) ($bRow['status'] ?? '');
             $rPrev = $db->prepare("SELECT user_id FROM vk_task_reviewers WHERE task_id = :tid");
             $rPrev->execute([':tid' => $id]);
             $notifyBefore['reviewer'] = array_map('intval', $rPrev->fetchAll(\PDO::FETCH_COLUMN));
@@ -1058,6 +1064,16 @@ class Verk extends Process implements Module, ConfigurableModule {
             'collaborator' => array_values($collaboratorIds),
         ];
         $this->notify->membershipChanged($id, $title, $notifyBefore, $notifyAfter, (int) $user->id);
+
+        // Tell everyone on the task when its status moved. Skipped for new tasks
+        // ($statusBefore is empty), and recipients are read after the role sync
+        // above so members added in this same save are included.
+        if ($statusBefore !== '' && $statusBefore !== $data[':status']) {
+            $this->notify->statusChanged(
+                $id, $title, $statusBefore, (string) $data[':status'],
+                $this->taskNotifyRecipients($id), (int) $user->id
+            );
+        }
 
         if ($returnUrl) $this->wire('session')->redirect($returnUrl);
         $this->redirect('task-edit', $id);
@@ -1191,6 +1207,11 @@ class Verk extends Process implements Module, ConfigurableModule {
             $this->wire('session')->redirect($back);
             return '';
         }
+        if (!$this->canDecideReview($taskId, $task)) {
+            $this->error($this->_('You do not have permission to review this task.'));
+            $this->wire('session')->redirect($back);
+            return '';
+        }
 
         $external = (new VerkExternalApprovals($this))->forTask($taskId);
         if($external && $external['provider'] === 'mailbox') {
@@ -1225,6 +1246,10 @@ class Verk extends Process implements Module, ConfigurableModule {
         if ($task['status'] === 'review') {
             $newStatus = $decision === 'approved' ? 'done' : 'in_progress';
             $db->prepare("UPDATE vk_tasks SET status = :s WHERE id = :id")->execute([':s' => $newStatus, ':id' => $taskId]);
+            $this->notify->statusChanged(
+                $taskId, (string) $task['title'], (string) $task['status'], $newStatus,
+                $this->taskNotifyRecipients($taskId), (int) $user->id
+            );
             $this->message($decision === 'approved'
                 ? $this->_('Review approved; task marked done.')
                 : $this->_('Changes requested; task moved to In Progress.'));
@@ -1240,7 +1265,6 @@ class Verk extends Process implements Module, ConfigurableModule {
         $this->requireAjaxCSRF();
         $input  = $this->wire('input');
         $db     = $this->wire('database');
-        $user   = $this->wire('user');
         $taskId = (int) $input->post('task_id');
         $status = $this->sanEnum($input->post('status'), ['open','in_progress','review','done']);
 
@@ -1248,23 +1272,21 @@ class Verk extends Process implements Module, ConfigurableModule {
             $this->jsonResponse(['ok' => false, 'message' => $this->_('Task does not exist.')], 404);
         }
 
-        $stmt = $db->prepare("SELECT created_by, assignee_id FROM vk_tasks WHERE id = :id");
-        $stmt->execute([':id' => $taskId]);
-        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        $row = $this->getTaskRoleRow($taskId);
         if (!$row) {
             $this->jsonResponse(['ok' => false, 'message' => $this->_('Task does not exist.')], 404);
         }
-
-        // The assignee, the creator, or a superuser may change a task's status.
-        $canEdit = $user->isSuperuser()
-            || (int)$row['created_by'] === (int)$user->id
-            || (int)$row['assignee_id'] === (int)$user->id;
-        if (!$canEdit) {
+        if (!$this->canChangeTaskStatus($row)) {
             $this->jsonResponse(['ok' => false, 'message' => $this->_('You do not have permission to change this task.')], 403);
         }
 
         $db->prepare("UPDATE vk_tasks SET status = :s WHERE id = :id")
            ->execute([':s' => $status, ':id' => $taskId]);
+
+        $this->notify->statusChanged(
+            $taskId, (string) $row['title'], (string) $row['status'], $status,
+            $this->taskNotifyRecipients($taskId), (int) $this->wire('user')->id
+        );
 
         $this->jsonResponse([
             'ok'           => true,
@@ -1300,6 +1322,9 @@ class Verk extends Process implements Module, ConfigurableModule {
             'notify_assignee' => $has('notify_assignee') ? (int)(bool)$input->post('notify_assignee') : (int)$current['notify_assignee'],
             'notify_collaborator' => $has('notify_collaborator') ? (int)(bool)$input->post('notify_collaborator') : (int)$current['notify_collaborator'],
             'notify_reviewer' => $has('notify_reviewer') ? (int)(bool)$input->post('notify_reviewer') : (int)$current['notify_reviewer'],
+            'notify_status' => $has('notify_status') ? (int)(bool)$input->post('notify_status') : (int)$current['notify_status'],
+            'status_edit_reviewer' => $has('status_edit_reviewer') ? (int)(bool)$input->post('status_edit_reviewer') : (int)$current['status_edit_reviewer'],
+            'status_edit_collaborator' => $has('status_edit_collaborator') ? (int)(bool)$input->post('status_edit_collaborator') : (int)$current['status_edit_collaborator'],
             // saveConfig() with an array replaces the whole config blob, so carry
             // over keys this form doesn't manage (otherwise they're wiped).
             'audit_rules' => (string)($current['audit_rules'] ?? ''),

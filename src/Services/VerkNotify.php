@@ -66,6 +66,46 @@ class VerkNotify {
         }
     }
 
+    /**
+     * Notify everyone on a task that its status moved. Recipients are the task's
+     * people (creator, assignee, reviewers, collaborators) as resolved by
+     * Verk::taskNotifyRecipients(); the actor is never emailed. No-ops when the
+     * status did not actually change.
+     */
+    public function statusChanged(int $taskId, string $title, string $from, string $to, array $recipientIds, int $actorId): void {
+        if ($from === $to) return;
+        if (!$this->cfgOn('notify_status')) return;
+
+        $ids = [];
+        foreach ($recipientIds as $uid) {
+            $uid = (int) $uid;
+            if ($uid > 0 && $uid !== $actorId) $ids[$uid] = $uid;
+        }
+        if (!$ids) return;
+
+        $taskUrl   = $this->deskUrl() . '?view=task-edit&id=' . $taskId;
+        $actor     = $this->actorName($actorId);
+        $fromLabel = $this->module->statusLabel($from);
+        $toLabel   = $this->module->statusLabel($to);
+
+        foreach ($ids as $uid) {
+            $rcpt = $this->recipient($uid);
+            if (!$rcpt) continue;
+
+            $subject = sprintf('[Verk] Task status changed: "%s" → %s', $title, $toLabel);
+            $body = sprintf(
+                "Hi %s,\n\n%s changed the status of a Verk task you're on.\n\nTask: %s\nStatus: %s → %s\n\nOpen the task:\n%s\n",
+                $rcpt['name'] ?: 'there',
+                $actor,
+                $title,
+                $fromLabel,
+                $toLabel,
+                $taskUrl
+            );
+            $this->sendPlain($rcpt['email'], $subject, $body);
+        }
+    }
+
     /** Send a single digest email to an assignee given N freshly bulk-created tasks. */
     public function bulkAssigned(int $assigneeId, int $count, int $actorId): void {
         if ($count < 1) return;
