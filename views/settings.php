@@ -38,6 +38,7 @@ $calendarStatus = $calendarReady ? __('Configured') : __('Needs setup');
 $calendarStatusClass = $calendarReady ? 'vk-label-done' : 'vk-label-open';
 $quarterStartMonth = max(1, min(12, (int)($cfg['quarter_start_month'] ?? 1)));
 $assigneeRoles = trim((string)($cfg['assignee_roles'] ?? ''));
+$statusManagerRoles = trim((string)($cfg['status_manager_roles'] ?? ''));
 $widgetEnabled = !empty($cfg['page_widget_enabled']);
 $widgetStatus = $widgetEnabled ? __('Enabled') : __('Disabled');
 $widgetStatusClass = $widgetEnabled ? 'vk-label-done' : 'vk-label-open';
@@ -296,10 +297,23 @@ ob_start();
                     <input type="hidden" name="action" value="save_settings">
 
                     <div class="vk-settings-subtitle"><?= __('Task permissions') ?></div>
-                    <p class="vk-settings-intro"><?= __('The assignee, the task creator, and superusers can always change a task\'s status. Extend that to the other people on a task.') ?></p>
+                    <p class="vk-settings-intro"><?= __('The assignee, the task creator, and superusers can always change a task\'s status. Extend that to the other people on a task, or grant it to whole roles.') ?></p>
                     <div class="vk-settings-options">
                         <label><input type="hidden" name="status_edit_reviewer" value="0"><input type="checkbox" name="status_edit_reviewer" value="1"<?= $checked($cfg['status_edit_reviewer']) ?>><span><strong><?= __('Reviewers can change status') ?></strong><small><?= __('Lets a reviewer set a task to Done from the task lists and dashboard') ?></small></span></label>
                         <label><input type="hidden" name="status_edit_collaborator" value="0"><input type="checkbox" name="status_edit_collaborator" value="1"<?= $checked($cfg['status_edit_collaborator']) ?>><span><strong><?= __('Collaborators can change status') ?></strong><small><?= __('Lets a collaborator set a task to Done from the task lists and dashboard') ?></small></span></label>
+                    </div>
+
+                    <div class="vk-field">
+                        <label class="uk-form-label"><?= __('Status manager roles') ?> <span class="vk-inline-note"><?= __('(comma-separated)') ?></span></label>
+                        <input type="text" name="status_manager_roles"
+                            value="<?= htmlspecialchars($statusManagerRoles) ?>"
+                            placeholder="<?= __('e.g. editor, manager') ?>"
+                            class="uk-input"
+                            list="vk-status-manager-roles-list">
+                        <div class="vk-field-help"><?= __('Users with these roles can change the status of, and edit, any task — even tasks they are not on. Leave empty for no status managers. Use role names, not labels.') ?></div>
+                        <datalist id="vk-status-manager-roles-list">
+                            <?php foreach ($allRoles as $roleName): ?><option value="<?= htmlspecialchars($roleName) ?>"><?php endforeach; ?>
+                        </datalist>
                     </div>
 
                     <div class="vk-form-actions">

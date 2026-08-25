@@ -322,13 +322,15 @@ trait VerkUiTrait {
     }
 
     /**
-     * The assignee, the creator, and superusers may always change a task's
-     * status. Reviewers and collaborators may too, but only while the matching
+     * The assignee, the creator, superusers, and status managers (users with
+     * a configured status manager role) may always change a task's status.
+     * Reviewers and collaborators may too, but only while the matching
      * setting is enabled. Expects a row from getTaskRoleRow().
      */
     protected function canChangeTaskStatus(array $row): bool {
         $user = $this->wire('user');
         if ($user->isSuperuser()) return true;
+        if ($this->isStatusManager()) return true;
         $uid = (int) $user->id;
         if ((int)($row['created_by'] ?? 0) === $uid) return true;
         if ((int)($row['assignee_id'] ?? 0) === $uid) return true;

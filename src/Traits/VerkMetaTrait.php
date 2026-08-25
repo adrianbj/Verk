@@ -96,6 +96,20 @@ trait VerkMetaTrait {
         return array_values($roles);
     }
 
+    /**
+     * Whether the current user holds one of the configured status manager
+     * roles. Status managers may change the status of, and edit, any task —
+     * including tasks they are not on. Empty config means no managers.
+     */
+    public function isStatusManager(): bool {
+        $cfg = $this->getConfig();
+        $user = $this->wire('user');
+        foreach (array_filter(array_map('trim', explode(',', (string)($cfg['status_manager_roles'] ?? '')))) as $roleName) {
+            if ($user->hasRole($roleName)) return true;
+        }
+        return false;
+    }
+
     protected function findAssignableUsers(array $includeUserIds = []): array {
         $users = $this->wire('users');
         $guestId = (int)$this->wire('config')->guestUserPageID;

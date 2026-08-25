@@ -212,6 +212,10 @@ Default config is defined in `getDefaultConfig()`:
 - `notify_assignee`
 - `notify_collaborator`
 - `notify_reviewer`
+- `notify_status`
+- `status_edit_reviewer`
+- `status_edit_collaborator`
+- `status_manager_roles`
 
 Config updates should preserve unrelated config keys. `saveConfig()` can replace
 the whole config blob, so follow the existing carry-forward pattern in

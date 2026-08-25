@@ -31,6 +31,7 @@ If this project helps your work, consider supporting future development: [GitHub
 - **View on site** — opens the front-end URL in a new tab
 - **Page Editor Widget** — Verk injects a configurable task widget into ProcessPageEdit, with live settings preview
 - **Assignee role scope** — optionally keep task assignee dropdowns and filters limited to selected ProcessWire roles
+- **Status manager roles** — optionally let selected ProcessWire roles change the status of, and edit, any task, even tasks they are not on
 - **Audit to tasks** — create one task or bulk tasks from audit results; page context is prefilled
 - **Calendar** — configurable publication source plus task due dates in month, week, and quarter views
 - **Quarter planning** — fiscal quarter start month, sprint quarter filters, date planning helpers, and quarter labels on tasks

@@ -84,6 +84,7 @@ class Verk extends Process implements Module, ConfigurableModule {
             'notify_status' => 0,
             'status_edit_reviewer' => 0,
             'status_edit_collaborator' => 0,
+            'status_manager_roles' => '',
         ];
     }
 
@@ -940,7 +941,13 @@ class Verk extends Process implements Module, ConfigurableModule {
             if ($dueDate) $editUrl .= '&due_date=' . rawurlencode($dueDate);
         }
         if ($returnUrl) $editUrl .= '&return_url=' . rawurlencode($returnUrl);
-        $this->requireOwnerForExisting('vk_tasks', $id);
+        // Status managers may edit any task; everyone else must own it.
+        if (!$this->isStatusManager()) {
+            $this->requireOwnerForExisting('vk_tasks', $id);
+        } elseif ($id && !$this->moduleRecordExists('vk_tasks', $id)) {
+            $this->error($this->_('Item does not exist.'));
+            $this->redirect();
+        }
 
         // Snapshot current membership before writes, to detect newly-added users.
         $notifyBefore = ['assignee' => 0, 'reviewer' => [], 'collaborator' => []];
@@ -1325,6 +1332,7 @@ class Verk extends Process implements Module, ConfigurableModule {
             'notify_status' => $has('notify_status') ? (int)(bool)$input->post('notify_status') : (int)$current['notify_status'],
             'status_edit_reviewer' => $has('status_edit_reviewer') ? (int)(bool)$input->post('status_edit_reviewer') : (int)$current['status_edit_reviewer'],
             'status_edit_collaborator' => $has('status_edit_collaborator') ? (int)(bool)$input->post('status_edit_collaborator') : (int)$current['status_edit_collaborator'],
+            'status_manager_roles' => $has('status_manager_roles') ? $this->sanRoleList((string)$input->post('status_manager_roles')) : (string)($current['status_manager_roles'] ?? ''),
             // saveConfig() with an array replaces the whole config blob, so carry
             // over keys this form doesn't manage (otherwise they're wiped).
             'audit_rules' => (string)($current['audit_rules'] ?? ''),

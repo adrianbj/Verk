@@ -192,7 +192,7 @@ ob_start();
                 <h3 class="vk-card-title"><?= __('Collaborating On') ?></h3>
                 <a href="<?= $url ?>?view=tasks&collaborator_id=<?= (int)$uid ?>" class="vk-card-action"><?= __('All mine') ?> <i class="fa fa-arrow-right"></i></a>
             </div>
-            <?php $collabStatusEditable = !empty($cfg['status_edit_collaborator']); ?>
+            <?php $collabStatusEditable = !empty($cfg['status_edit_collaborator']) || $this->isStatusManager(); ?>
             <?php if (!empty($myCollaborations)): ?>
             <div class="vk-mini-list"<?= $collabStatusEditable ? ' data-status-list data-remove-done data-status-endpoint="' . $url . '" data-csrf-name="' . htmlspecialchars($this->getCSRFName()) . '" data-csrf-token="' . htmlspecialchars($this->getCSRFToken()) . '"' : '' ?>>
                 <?php foreach ($myCollaborations as $c): ?>
@@ -230,7 +230,7 @@ ob_start();
                 <h3 class="vk-card-title"><?= __('My Reviews') ?></h3>
                 <a href="<?= $url ?>?view=tasks&status=review&reviewer_id=<?= (int)$uid ?>" class="vk-card-action"><?= __('All mine') ?> <i class="fa fa-arrow-right"></i></a>
             </div>
-            <?php $reviewStatusEditable = !empty($cfg['status_edit_reviewer']); ?>
+            <?php $reviewStatusEditable = !empty($cfg['status_edit_reviewer']) || $this->isStatusManager(); ?>
             <?php if (!empty($myReviews)): ?>
             <div class="vk-mini-list"<?= $reviewStatusEditable ? ' data-status-list data-remove-done data-status-endpoint="' . $url . '" data-csrf-name="' . htmlspecialchars($this->getCSRFName()) . '" data-csrf-token="' . htmlspecialchars($this->getCSRFToken()) . '"' : '' ?>>
                 <?php foreach ($myReviews as $r): ?>

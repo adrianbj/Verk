@@ -5,6 +5,7 @@
 ### Added
 - Optional **Task permissions** settings: reviewers and/or collaborators can be allowed to change a task's status (including setting it to Done). Both are off by default, so existing behaviour is unchanged until an admin opts in.
 - Inline status dropdowns on the Dashboard "My Reviews" and "Collaborating On" cards, shown only when the matching permission is enabled.
+- **Status manager roles** setting: users holding one of the configured ProcessWire roles can change the status of, and edit, any task — even tasks they are not on (creator, assignee, reviewer, or collaborator). Configured as a comma-separated role list in Settings → Task permissions; empty by default, so existing behaviour is unchanged. Review approve/request-changes decisions and task deletion are unaffected. Status changes made by managers send the usual status-change notification emails.
 - Email notification when a task's status changes, sent to everyone on the task (creator, assignee, reviewers, collaborators) except whoever made the change. Off by default; enable it with the new **Status changes** toggle in Settings, which is also governed by the notifications master switch.
 
 ### Fixed
